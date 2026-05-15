@@ -1,0 +1,47 @@
+{
+  "name": "brisas-backend",
+  "version": "0.1.0",
+  "description": "API REST para el sistema de reservas Brisas de Calamuchita",
+  "main": "src/servidor.js",
+  "type": "module",
+  "scripts": {
+    "dev": "node --watch src/servidor.js",
+    "iniciar": "node src/servidor.js",
+    "migrar": "node migraciones/ejecutar.js",
+    "semillas": "node semillas/ejecutar.js",
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
+    "test:watch": "node --experimental-vm-modules node_modules/jest/bin/jest.js --watch",
+    "test:coverage": "node --experimental-vm-modules node_modules/jest/bin/jest.js --coverage",
+    "lint": "eslint src tests"
+  },
+  "keywords": [
+    "brisas-de-calamuchita",
+    "reservas",
+    "alquiler-turistico",
+    "api-rest",
+    "express",
+    "mysql"
+  ],
+  "author": "Jorge Kalas",
+  "license": "MIT",
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "helmet": "^8.0.0",
+    "jsonwebtoken": "^9.0.2",
+    "morgan": "^1.10.0",
+    "mysql2": "^3.11.5",
+    "nodemailer": "^6.9.16",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "eslint": "^9.17.0",
+    "jest": "^29.7.0",
+    "supertest": "^7.0.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

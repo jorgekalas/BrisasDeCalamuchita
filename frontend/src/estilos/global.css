@@ -1,0 +1,138 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* =========================================================
+   Estilos globales — Brisas de Calamuchita
+   ========================================================= */
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply bg-crema-100 text-piedra-900 font-cuerpo;
+    background-image:
+      radial-gradient(ellipse at top left, rgba(61, 91, 60, 0.06), transparent 50%),
+      radial-gradient(ellipse at bottom right, rgba(201, 123, 90, 0.06), transparent 50%);
+    background-attachment: fixed;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display;
+    letter-spacing: -0.02em;
+  }
+
+  /* Scrollbar minimalista y cálida */
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(61, 91, 60, 0.3);
+    border-radius: 9999px;
+  }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(61, 91, 60, 0.5); }
+
+  /* Selección de texto */
+  ::selection { background: rgba(201, 123, 90, 0.3); color: #2a2520; }
+}
+
+@layer components {
+  /* Botón principal: terracota cálido */
+  .btn-principal {
+    @apply inline-flex items-center justify-center gap-2
+           px-6 py-3 rounded-capsula
+           bg-terracota-500 text-crema-50 font-medium
+           transition-all duration-300
+           hover:bg-terracota-600 hover:shadow-calido hover:-translate-y-0.5
+           active:translate-y-0
+           focus:outline-none focus:ring-2 focus:ring-terracota-300 focus:ring-offset-2 focus:ring-offset-crema-100;
+  }
+
+  /* Botón secundario: verde musgo */
+  .btn-secundario {
+    @apply inline-flex items-center justify-center gap-2
+           px-6 py-3 rounded-capsula
+           bg-musgo-700 text-crema-50 font-medium
+           transition-all duration-300
+           hover:bg-musgo-800 hover:shadow-calido hover:-translate-y-0.5
+           focus:outline-none focus:ring-2 focus:ring-musgo-400 focus:ring-offset-2;
+  }
+
+  /* Botón fantasma: borde + texto */
+  .btn-fantasma {
+    @apply inline-flex items-center justify-center gap-2
+           px-6 py-3 rounded-capsula
+           bg-transparent text-musgo-700 border border-musgo-700
+           font-medium
+           transition-all duration-300
+           hover:bg-musgo-700 hover:text-crema-50;
+  }
+
+  /* Tarjeta orgánica */
+  .tarjeta {
+    @apply bg-crema-50 rounded-organico p-6 shadow-suave
+           border border-crema-200/60;
+  }
+
+  /* Input estilo natural */
+  .input-natural {
+    @apply w-full px-4 py-3 rounded-xl
+           bg-crema-50 border border-crema-200
+           text-piedra-900 placeholder:text-piedra-600
+           focus:outline-none focus:border-musgo-500 focus:ring-2 focus:ring-musgo-200
+           transition-colors duration-200;
+  }
+
+  /* Badge de estado */
+  .badge {
+    @apply inline-flex items-center gap-1.5 px-3 py-1 rounded-capsula text-xs font-medium;
+  }
+  .badge-pendiente { @apply bg-amber-100 text-amber-800; }
+  .badge-confirmada { @apply bg-musgo-100 text-musgo-800; }
+  .badge-en-curso { @apply bg-blue-100 text-blue-800; }
+  .badge-finalizada { @apply bg-piedra-700/10 text-piedra-700; }
+  .badge-cancelada { @apply bg-red-100 text-red-800; }
+
+  /* Sombra de elevación para hero */
+  .elevado {
+    box-shadow:
+      0 30px 80px -30px rgba(42, 37, 32, 0.4),
+      0 10px 20px -10px rgba(42, 37, 32, 0.2);
+  }
+}
+
+@layer utilities {
+  /* Textura de grano sutil sobre cualquier elemento */
+  .con-grano {
+    position: relative;
+  }
+  .con-grano::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.2 0 0 0 0 0.15 0 0 0 0 0.1 0 0 0 0.18 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    opacity: 0.5;
+    mix-blend-mode: overlay;
+    pointer-events: none;
+    border-radius: inherit;
+  }
+
+  /* Animaciones escalonadas para reveal de listas */
+  .escalonar > * {
+    animation: aparecer 0.6s ease-out both;
+  }
+  .escalonar > *:nth-child(1) { animation-delay: 0.05s; }
+  .escalonar > *:nth-child(2) { animation-delay: 0.15s; }
+  .escalonar > *:nth-child(3) { animation-delay: 0.25s; }
+  .escalonar > *:nth-child(4) { animation-delay: 0.35s; }
+  .escalonar > *:nth-child(5) { animation-delay: 0.45s; }
+  .escalonar > *:nth-child(6) { animation-delay: 0.55s; }
+}
+
+@keyframes aparecer {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}

@@ -1,0 +1,16 @@
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+
+// Configuración de Vite para el frontend de Brisas de Calamuchita.
+// Documentación: https://vitejs.dev/config/
+export default defineConfig({
+  plugins: [react()],
+  server: {
+    port: 5173,
+    open: true, // abre el navegador automáticamente al levantar el dev server
+  },
+  build: {
+    outDir: 'dist',
+    sourcemap: true,
+  },
+});

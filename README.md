@@ -1,23 +1,23 @@
-# 🏡 Brisas de Calamuchita
+# Brisas de Calamuchita
 
 Sistema web para la gestión de reservas de la propiedad de alquiler turístico **Brisas de Calamuchita**, ubicada en Santa Rosa de Calamuchita, Córdoba.
 
-> Proyecto Integrador — Prácticas Profesionalizantes IV
+> Proyecto Integrador - Prácticas Profesionalizantes IV
 > Tecnicatura Superior en Desarrollo de Software
-> Instituto de Formación Técnica N° 29 — Primer Cuatrimestre 2026
+> Instituto de Formación Técnica N° 29 - Primer Cuatrimestre 2026
 >
 > **Autor:** Jorge Kalas
 > **Docentes:** Kevin Del Bello, Emir García Ontiveros
 
 ---
 
-## 📖 Descripción
+## Descripción
 
 Aplicación web responsive que permite a los turistas conocer la propiedad, consultar disponibilidad en tiempo real y solicitar reservas online. Incluye un panel interno para que el administrador gestione las solicitudes mediante un modelo híbrido (digital + validación humana).
 
 Reemplaza el proceso manual actual (WhatsApp + papel) eliminando problemas de reservas solapadas, falta de control de huéspedes/vehículos y desorganización general.
 
-## 🧩 Stack tecnológico
+## Stack tecnológico
 
 | Capa | Tecnología |
 |---|---|
@@ -30,7 +30,7 @@ Reemplaza el proceso manual actual (WhatsApp + papel) eliminando problemas de re
 | Deploy | Railway (backend + MySQL) + Vercel (frontend) |
 | Testing | Jest + Supertest (backend), Vitest + React Testing Library (frontend) |
 
-## 📁 Estructura del repositorio
+## Estructura del repositorio
 
 ```
 brisas-de-calamuchita/
@@ -57,9 +57,9 @@ brisas-de-calamuchita/
 └── .github/workflows/      # Pipelines CI/CD
 ```
 
-## 🚀 Cómo levantar el proyecto en local
+## Cómo levantar el proyecto en local
 
-> ⚠️ Estas instrucciones se completan a partir del Bloque 3. Por ahora solo está la estructura.
+> Estas instrucciones se completan a partir del Bloque 3. Por ahora solo está la estructura.
 
 ```bash
 # 1. Clonar el repositorio
@@ -84,7 +84,7 @@ cp .env.ejemplo .env
 npm run dev
 ```
 
-## 📚 Documentación
+## Documentación
 
 - [Documento base del sistema](./docs/manuales/01-documento-base.md)
 - [Manual técnico](./docs/manuales/02-manual-tecnico.md)
@@ -92,6 +92,6 @@ npm run dev
 - [Documentación de la API](./docs/api/README.md)
 - [Diagramas del sistema](./docs/diagramas/)
 
-## 🪪 Licencia
+## Licencia
 
-Proyecto académico — uso educativo.
+Proyecto académico, uso educativo.

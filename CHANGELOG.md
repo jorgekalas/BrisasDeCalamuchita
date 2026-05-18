@@ -12,7 +12,7 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 - README del backend con explicación de la arquitectura por capas.
 - Documento base del sistema en `docs/manuales/01-documento-base.md`.
 
-### Sub-bloque 2A — Frontend de demo en React (✅ buildea sin errores)
+### Sub-bloque 2A — Frontend de demo en React (buildea sin errores)
 - Configuración base: Vite, Tailwind con paleta personalizada (musgo, terracota, crema, piedra),
   PostCSS, autoprefixer, fuentes Fraunces + Outfit.
 - Estilos globales con texturas (grano), animaciones de reveal escalonado, botones, badges,

@@ -21,10 +21,10 @@ Reemplaza el proceso manual actual (WhatsApp + papel) eliminando problemas de re
 
 | Etapa | Descripción | Estado |
 |---|---|---|
-| 1 | Análisis del negocio, alcance y casos de uso | ✅ Completa |
-| 2 | Diseño del sistema (UML, DER, modelo de datos) | ✅ Completa |
-| 3 | Prototipo navegable + presentación de avance | ✅ Completa |
-| 4 | Backend, conexión, pruebas y deploy | 🔄 En curso |
+| 1 | Análisis del negocio, alcance y casos de uso | Completa |
+| 2 | Diseño del sistema (UML, DER, modelo de datos) | Completa |
+| 3 | Prototipo navegable + presentación de avance | Completa |
+| 4 | Backend, conexión, pruebas y deploy | En curso |
 
 El frontend de demo (Etapa 3) es completamente navegable con datos en memoria (mock). El backend real se implementa en la Etapa 4. Ver [CHANGELOG.md](./CHANGELOG.md) para el detalle de avances.
 

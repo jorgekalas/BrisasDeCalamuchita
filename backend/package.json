@@ -7,8 +7,9 @@
   "scripts": {
     "dev": "node --watch src/servidor.js",
     "iniciar": "node src/servidor.js",
-    "migrar": "node migraciones/ejecutar.js",
-    "semillas": "node semillas/ejecutar.js",
+    "migrar": "node scripts/runner-sql.cjs migrar",
+    "semillas": "node scripts/runner-sql.cjs semillas",
+    "resetear": "node scripts/runner-sql.cjs resetear",
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
     "test:watch": "node --experimental-vm-modules node_modules/jest/bin/jest.js --watch",
     "test:coverage": "node --experimental-vm-modules node_modules/jest/bin/jest.js --coverage",
@@ -25,7 +26,7 @@
   "author": "Jorge Kalas",
   "license": "MIT",
   "dependencies": {
-    "bcryptjs": "^2.4.3",
+    "bcrypt": "^5.1.1",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",

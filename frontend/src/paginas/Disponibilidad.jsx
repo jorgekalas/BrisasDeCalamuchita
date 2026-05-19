@@ -36,8 +36,8 @@ export default function Disponibilidad() {
           Elegí tus <span className="italic text-musgo-700">fechas</span>
         </h1>
         <p className="text-piedra-700 leading-relaxed">
-          Tocá un día para marcar el ingreso y otro para el egreso. Las fechas en verde están reservadas;
-          las amarillas, en proceso de confirmación.
+          Tocá un día para marcar el ingreso y otro para el egreso. Las fechas tachadas
+          ya están reservadas; las amarillas, en proceso de confirmación.
         </p>
       </div>
 

@@ -1,39 +1,27 @@
-# Brisas de Calamuchita
+# 🏡 Brisas de Calamuchita
 
 Sistema web para la gestión de reservas de la propiedad de alquiler turístico **Brisas de Calamuchita**, ubicada en Santa Rosa de Calamuchita, Córdoba.
 
-> Proyecto Integrador - Prácticas Profesionalizantes IV
+> Proyecto Integrador — Prácticas Profesionalizantes IV
 > Tecnicatura Superior en Desarrollo de Software
-> Instituto de Formación Técnica N° 29 - Primer Cuatrimestre 2026
+> Instituto de Formación Técnica N° 29 — Primer Cuatrimestre 2026
 >
 > **Autor:** Jorge Kalas
 > **Docentes:** Kevin Del Bello, Emir García Ontiveros
 
 ---
 
-## Descripción
+## 📖 Descripción
 
 Aplicación web responsive que permite a los turistas conocer la propiedad, consultar disponibilidad en tiempo real y solicitar reservas online. Incluye un panel interno para que el administrador gestione las solicitudes mediante un modelo híbrido (digital + validación humana).
 
 Reemplaza el proceso manual actual (WhatsApp + papel) eliminando problemas de reservas solapadas, falta de control de huéspedes/vehículos y desorganización general.
 
-## Estado actual del proyecto
-
-| Etapa | Descripción | Estado |
-|---|---|---|
-| 1 | Análisis del negocio, alcance y casos de uso | Completa |
-| 2 | Diseño del sistema (UML, DER, modelo de datos) | Completa |
-| 3 | Prototipo navegable + presentación de avance | Completa |
-| 4 | Backend, conexión, pruebas y deploy | En curso |
-
-El frontend de demo (Etapa 3) es completamente navegable con datos en memoria (mock). El backend real se implementa en la Etapa 4. Ver [CHANGELOG.md](./CHANGELOG.md) para el detalle de avances.
-
-## Stack tecnológico
+## 🧩 Stack tecnológico
 
 | Capa | Tecnología |
 |---|---|
 | Frontend | React 18 + Vite + React Router + Tailwind CSS + Axios |
-| Animaciones | Framer Motion + Lucide React |
 | Backend | Node.js 20 + Express + mysql2 + JWT + bcrypt + Zod |
 | Base de datos | MySQL 8 |
 | Notificaciones | Nodemailer + Gmail SMTP |
@@ -42,11 +30,11 @@ El frontend de demo (Etapa 3) es completamente navegable con datos en memoria (m
 | Deploy | Railway (backend + MySQL) + Vercel (frontend) |
 | Testing | Jest + Supertest (backend), Vitest + React Testing Library (frontend) |
 
-## Estructura del repositorio
+## 📁 Estructura del repositorio
 
 ```
 brisas-de-calamuchita/
-├── backend/                # API REST (Node.js + Express) — Etapa 4
+├── backend/                # API REST (Node.js + Express)
 │   ├── src/
 │   │   ├── config/         # Configuración (BD, env, constantes)
 │   │   ├── controladores/  # Lógica de manejo de requests
@@ -60,94 +48,70 @@ brisas-de-calamuchita/
 │   ├── migraciones/        # Scripts SQL de creación de tablas
 │   └── semillas/           # Datos iniciales (admin, etc.)
 ├── frontend/               # SPA (React + Vite)
-│   └── src/
-│       ├── componentes/    # Header, Footer, Calendario, ModalIngresos
-│       ├── paginas/        # 8 pantallas del sistema
-│       ├── datos/          # mock.js (datos simulados de la Etapa 3)
-│       ├── utilidades/     # Helpers de formato
-│       └── ContextoApp.jsx # Estado global
 ├── docker/                 # Dockerfiles y configuración
 ├── docs/                   # Documentación del proyecto
 │   ├── diagramas/          # UML, DER, estados, secuencia
-│   └── manuales/           # Documento base, técnico, usuario
+│   ├── api/                # Documentación OpenAPI/Swagger
+│   └── manuales/           # Manual técnico y de usuario
 ├── scripts/                # Scripts auxiliares
 └── .github/workflows/      # Pipelines CI/CD
 ```
 
-## Cómo levantar el frontend de demo
+## 🚀 Cómo levantar el proyecto en local
 
-El prototipo está completamente operativo con datos simulados. No requiere base de datos ni backend.
+### Opción rápida (recomendada): Docker + frontend
+
+Levanta MySQL con los datos cargados automáticamente, y el frontend con todas las pantallas:
 
 ```bash
 # 1. Clonar el repositorio
 git clone https://github.com/jorgekalas/BrisasDeCalamuchita.git
 cd BrisasDeCalamuchita
 
-# 2. Frontend
-cd frontend
-npm install
-npm run dev
-```
-
-El servidor de desarrollo queda disponible en `http://localhost:5173`.
-
-### Usuarios de demo
-
-| Rol | Email | Contraseña |
-|---|---|---|
-| Cliente | maria@ejemplo.com | cualquier valor |
-| Administrador | admin@brisas.com.ar | cualquier valor |
-
-> En esta etapa la autenticación es simulada; la validación real se implementa en la Etapa 4.
-
-## Cómo levantar el proyecto completo (Etapa 4 — en desarrollo)
-
-```bash
-# 1. Levantar la base de datos con Docker
+# 2. Levantar la base de datos (MySQL + phpMyAdmin)
 docker compose up -d
-
-# 2. Backend
-cd backend
-npm install
-cp .env.ejemplo .env
-npm run migrar
-npm run semillas
-npm run dev
+# Esperá unos segundos a que mysql diga "healthy":
+docker compose ps
 
 # 3. Frontend (en otra terminal)
 cd frontend
 npm install
+npm run dev
+# Abrí http://localhost:5173
+```
+
+Una vez arriba podés inspeccionar la BD en **http://localhost:8080** (phpMyAdmin).
+
+### Opción con backend (Etapa 4 — en desarrollo)
+
+```bash
+# Suma estos pasos a lo anterior:
+cd backend
+npm install
 cp .env.ejemplo .env
 npm run dev
 ```
 
-## Funcionalidades del sistema
+### Usuarios de demo cargados automáticamente
 
-- **Landing pública** con presentación de la propiedad, características, galería y mapa real de Google embebido.
-- **Calendario de disponibilidad** interactivo con selección de rango de fechas (verde = tu selección, terracota tachado = reservado).
-- **Login y registro** de usuarios.
-- **Formulario de reserva** con datos del huésped, vehículo (con opción de "no llevo vehículo"), teléfono de contacto editable y observaciones.
-- **Confirmación de reserva** con notificación automática por email.
-- **"Mis reservas"** del cliente con historial completo.
-- **Panel de administración** con:
-  - KPIs (pendientes, confirmadas, finalizadas, ingreso histórico anual)
-  - Modal de evolución mensual de ingresos (gráfico de barras + línea acumulada)
-  - Listado paginado de reservas (10 por página, ordenado por fecha de solicitud)
-  - Botón de WhatsApp directo con mensaje prearmado
-  - Acciones de confirmar y rechazar reservas
+| Rol | Email | Contraseña |
+|---|---|---|
+| Administrador | `admin@brisas.com.ar` | `demo1234` |
+| Cliente | `maria@ejemplo.com` | `demo1234` |
+| (otros 19 clientes) | `*@ejemplo.com` | `demo1234` |
 
-## Documentación
+Más detalles del entorno Docker en [`docker/README.md`](./docker/README.md).
+
+## 📚 Documentación
 
 - [Documento base del sistema](./docs/manuales/01-documento-base.md) — relevamiento, alcance, casos de uso
+- [Diccionario de datos](./docs/diagramas/diccionario-de-datos.md) — todas las tablas con sus columnas y restricciones
 - [Diagramas del sistema](./docs/diagramas/) — UML, DER, estados, secuencia, casos de uso
+- [Entorno Docker](./docker/README.md) — cómo levantar MySQL local
 - Manual técnico — *en desarrollo (Etapa 4)*
 - Manual de usuario — *en desarrollo (Etapa 4)*
 - Documentación de la API (OpenAPI/Swagger) — *en desarrollo (Etapa 4)*
 
-## Historial de cambios
+## 🪪 Licencia
 
-Ver [CHANGELOG.md](./CHANGELOG.md) para el detalle de los avances por bloque.
-
-## Licencia
-
-Proyecto académico de uso educativo. Todos los derechos reservados al autor.
+Proyecto académico — uso educativo.

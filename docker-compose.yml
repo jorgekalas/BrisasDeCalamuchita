@@ -1,0 +1,126 @@
+# =============================================================
+#   BRISAS DE CALAMUCHITA — DOCKER COMPOSE
+# =============================================================
+#   Levanta el entorno de desarrollo local con MySQL 8 y
+#   phpMyAdmin. Las semillas y migraciones se ejecutan
+#   automaticamente la primera vez que arranca MySQL (cuando
+#   el volumen esta vacio).
+#
+#   Comandos basicos:
+#     docker compose up -d        # arranca en segundo plano
+#     docker compose ps           # ver estado
+#     docker compose logs -f      # ver logs en tiempo real
+#     docker compose stop         # parar (mantiene datos)
+#     docker compose down         # parar y borrar contenedores
+#     docker compose down -v      # parar + borrar volumenes (reset total)
+# =============================================================
+
+services:
+  # -----------------------------------------------------------
+  #   MySQL 8 — base de datos del sistema
+  # -----------------------------------------------------------
+  mysql:
+    image: mysql:8.4
+    container_name: brisas_mysql
+    restart: unless-stopped
+
+    # Pasamos la configuracion como flags a mysqld para evitar el problema
+    # de los permisos en Windows. Bind-mountar un archivo .cnf no funciona
+    # en Windows porque los permisos 0777 hacen que MySQL lo ignore por
+    # seguridad ("World-writable config file is ignored").
+    command: >
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_unicode_ci
+      --default-time-zone=-03:00
+      --sql-mode=STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION
+      --max-connections=100
+      --innodb-buffer-pool-size=256M
+
+    environment:
+      # Contraseña del usuario root.
+      # En produccion esto se sobreescribe con un .env real.
+      MYSQL_ROOT_PASSWORD: rootBrisas2026
+      # Base de datos que se crea automaticamente al primer arranque.
+      MYSQL_DATABASE: brisas_de_calamuchita
+      # Usuario de la aplicacion (lo usa el backend).
+      MYSQL_USER: brisas_user
+      MYSQL_PASSWORD: brisas_password_local
+      # Timezone Argentina (para que los TIMESTAMP queden en hora local).
+      TZ: America/Argentina/Cordoba
+
+    ports:
+      # Mapeamos el puerto interno 3306 al 3307 del host
+      # (3306 nativo ya está ocupado en muchos equipos de desarrollo).
+      - "3307:3306"
+
+    volumes:
+      # Volumen persistente: los datos sobreviven a docker compose down.
+      - mysql_data:/var/lib/mysql
+
+      # Scripts que se ejecutan AUTOMATICAMENTE la primera vez
+      # que arranca el contenedor (cuando mysql_data esta vacio).
+      # Se procesan en orden alfabetico, por eso los prefijos 001, 002.
+      - ./backend/migraciones/001_schema.sql:/docker-entrypoint-initdb.d/001_schema.sql:ro
+      - ./backend/semillas/001_datos_iniciales.sql:/docker-entrypoint-initdb.d/002_datos_iniciales.sql:ro
+
+    # Healthcheck: docker espera a que MySQL este realmente listo
+    # antes de marcar el contenedor como "healthy". phpMyAdmin
+    # depende de esto para arrancar solo cuando mysql esta listo.
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p$$MYSQL_ROOT_PASSWORD"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+    networks:
+      - brisas_net
+
+
+  # -----------------------------------------------------------
+  #   phpMyAdmin — interfaz web para inspeccionar la BD
+  # -----------------------------------------------------------
+  phpmyadmin:
+    image: phpmyadmin:5.2
+    container_name: brisas_phpmyadmin
+    restart: unless-stopped
+
+    environment:
+      # Apuntamos a nuestro servicio mysql por nombre de red.
+      PMA_HOST: mysql
+      PMA_PORT: 3306
+      # Auto-login con root (solo desarrollo).
+      PMA_USER: root
+      PMA_PASSWORD: rootBrisas2026
+      # Limite de tamaño de upload (util si queremos importar SQL grandes).
+      UPLOAD_LIMIT: 64M
+
+    ports:
+      # phpMyAdmin queda en http://localhost:8080
+      - "8081:80"
+
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+    networks:
+      - brisas_net
+
+
+# =============================================================
+#   Volumenes
+# =============================================================
+volumes:
+  mysql_data:
+    name: brisas_mysql_data
+
+
+# =============================================================
+#   Red interna
+# =============================================================
+# Una red dedicada para que los contenedores se vean entre si
+# sin exponer todo al host.
+networks:
+  brisas_net:
+    name: brisas_net
+    driver: bridge

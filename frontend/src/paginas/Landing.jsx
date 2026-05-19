@@ -47,7 +47,7 @@ export default function Landing() {
               transition={{ duration: 0.7, delay: 0.2 }}
               className="text-lg text-piedra-700 leading-relaxed max-w-lg mb-8"
             >
-              Una casa serrana pensada para grupos y familias. A diez minutos del río,
+              Una casa serrana pensada para grupos y familias. A dos cuadras del río,
               rodeada de árboles, con todo lo necesario para desconectarse durante unos días.
             </motion.p>
 

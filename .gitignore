@@ -53,9 +53,12 @@ Thumbs.db
 desktop.ini
 
 # --- Docker ---
-# (Conservamos Dockerfiles y compose files; ignoramos volúmenes locales)
+# Los volumenes nombrados (brisas_mysql_data) los administra Docker
+# internamente, no caen en el repo. Solo ignoramos carpetas locales
+# por si alguien usa bind mounts custom.
 docker/datos-mysql/
 docker/datos-volumenes/
+docker/mysql/logs/
 
 # --- Base de datos local ---
 *.sqlite

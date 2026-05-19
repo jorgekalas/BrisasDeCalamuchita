@@ -233,3 +233,187 @@ export async function obtenerDisponibilidad({ desde, hasta }) {
   );
   return filas;
 }
+
+
+// =============================================================
+//   ESCRITURA (Bloque 7)
+// =============================================================
+
+
+// -------------------------------------------------------------
+//   Verificar solapamiento de fechas
+// -------------------------------------------------------------
+//   Devuelve true si las fechas chocan con alguna reserva
+//   "activa" (Pendiente, Confirmada, En curso).
+//
+//   Logica de solapamiento (RN-01):
+//     existeOtraReserva
+//        WHERE estado IN (activos)
+//          AND fecha_ingreso < <nuestra fecha_egreso>
+//          AND fecha_egreso  > <nuestra fecha_ingreso>
+//
+//   Es la formula estandar de solapamiento de rangos.
+//
+//   NOTA: validar con SELECT antes de INSERT es vulnerable a
+//   condiciones de carrera si dos clientes envian POST al mismo
+//   tiempo (los dos ven libre, ambos insertan). Para volumen
+//   bajo es aceptable. Para alto volumen seria SELECT FOR UPDATE
+//   en transaccion.
+// -------------------------------------------------------------
+export async function tieneSolapamiento({ propiedadId, fechaIngreso, fechaEgreso, ignorarId = null }) {
+  const params = [propiedadId, fechaEgreso, fechaIngreso];
+  let sql = `
+    SELECT id, fecha_ingreso, fecha_egreso, estado
+      FROM reserva
+     WHERE propiedad_id = ?
+       AND estado IN ('Pendiente', 'Confirmada', 'En curso')
+       AND fecha_ingreso < ?
+       AND fecha_egreso  > ?
+  `;
+
+  if (ignorarId) {
+    sql += ' AND id <> ?';
+    params.push(ignorarId);
+  }
+
+  sql += ' LIMIT 1';
+
+  const [filas] = await pool.query(sql, params);
+  return filas.length > 0;
+}
+
+
+// -------------------------------------------------------------
+//   Crear reserva (transaccional)
+// -------------------------------------------------------------
+//   Inserta:
+//     1. La reserva con estado 'Pendiente' y bloqueo_hasta = NOW + 2 horas
+//     2. El vehiculo asociado (si vino en el body)
+//
+//   Si algo falla en el medio, rollback. Es la primera transaccion
+//   compleja del sistema.
+//
+//   Devuelve la reserva completa con datos anidados (para que el
+//   frontend la pueda mostrar sin pedirla de nuevo).
+// -------------------------------------------------------------
+export async function crearConTransaccion(datos) {
+  const { clienteId, propiedadId, fechaIngreso, fechaEgreso,
+          cantidadHuespedes, observaciones, vehiculo,
+          minutosBloqueo = 120 } = datos;
+
+  const conexion = await pool.getConnection();
+  try {
+    await conexion.beginTransaction();
+
+    // 1. Insertar la reserva en estado Pendiente con bloqueo de 2hs.
+    //    bloqueo_hasta usa NOW() del servidor, no del cliente.
+    const [resReserva] = await conexion.query(
+      `INSERT INTO reserva
+         (cliente_id, propiedad_id, fecha_ingreso, fecha_egreso,
+          cantidad_huespedes, estado, observaciones, bloqueo_hasta)
+       VALUES (?, ?, ?, ?, ?, 'Pendiente', ?,
+               DATE_ADD(CURRENT_TIMESTAMP, INTERVAL ? MINUTE))`,
+      [
+        clienteId, propiedadId, fechaIngreso, fechaEgreso,
+        cantidadHuespedes, observaciones || null, minutosBloqueo,
+      ]
+    );
+    const reservaId = resReserva.insertId;
+
+    // 2. Si vino vehiculo, insertarlo (RN-05: max 1 por reserva,
+    //    garantizado por UNIQUE en la tabla)
+    if (vehiculo && vehiculo.patente && vehiculo.modelo) {
+      await conexion.query(
+        `INSERT INTO vehiculo (reserva_id, patente, modelo)
+         VALUES (?, ?, ?)`,
+        [reservaId, vehiculo.patente, vehiculo.modelo]
+      );
+    }
+
+    await conexion.commit();
+
+    // Devolver la reserva completa con todos los JOINs (cliente + vehiculo)
+    return await buscarPorId(reservaId);
+  } catch (error) {
+    await conexion.rollback();
+    throw error;
+  } finally {
+    conexion.release();
+  }
+}
+
+
+// -------------------------------------------------------------
+//   Cambiar estado (helper genérico)
+// -------------------------------------------------------------
+//   Actualiza el estado de la reserva y opcionalmente otros
+//   campos relacionados al cambio:
+//     - confirmada_en: cuando pasa a Confirmada
+//     - admin_confirmador_id: idem
+//     - bloqueo_hasta: se limpia al confirmar o cancelar
+//
+//   Devuelve la reserva actualizada (completa, con JOINs).
+// -------------------------------------------------------------
+export async function cambiarEstado(reservaId, nuevoEstado, opciones = {}) {
+  const partes = ['estado = ?'];
+  const valores = [nuevoEstado];
+
+  // Si confirmamos, registramos el admin y la fecha
+  if (nuevoEstado === 'Confirmada') {
+    if (opciones.adminId) {
+      partes.push('admin_confirmador_id = ?');
+      valores.push(opciones.adminId);
+    }
+    partes.push('confirmada_en = CURRENT_TIMESTAMP');
+  }
+
+  // Al confirmar o cancelar, el bloqueo ya no aplica
+  if (nuevoEstado === 'Confirmada' || nuevoEstado === 'Cancelada') {
+    partes.push('bloqueo_hasta = NULL');
+  }
+
+  valores.push(reservaId);
+
+  await pool.query(
+    `UPDATE reserva SET ${partes.join(', ')} WHERE id = ?`,
+    valores
+  );
+
+  return await buscarPorId(reservaId);
+}
+
+
+// -------------------------------------------------------------
+//   Cancelar todas las reservas pendientes con bloqueo vencido
+// -------------------------------------------------------------
+//   La usa el cron job interno (RN-03). Pasa a 'Cancelada' todas
+//   las pendientes cuyo bloqueo_hasta ya quedo en el pasado.
+//
+//   Devuelve la cantidad de reservas afectadas y los IDs.
+// -------------------------------------------------------------
+export async function cancelarBloqueosVencidos() {
+  // Primero buscar los IDs afectados (para retornarlos)
+  const [filas] = await pool.query(
+    `SELECT id FROM reserva
+      WHERE estado = 'Pendiente'
+        AND bloqueo_hasta IS NOT NULL
+        AND bloqueo_hasta <= CURRENT_TIMESTAMP`
+  );
+
+  if (filas.length === 0) {
+    return { cantidad: 0, ids: [] };
+  }
+
+  const ids = filas.map(f => f.id);
+
+  // Ejecutar el UPDATE masivo
+  const [resultado] = await pool.query(
+    `UPDATE reserva
+        SET estado = 'Cancelada',
+            bloqueo_hasta = NULL
+      WHERE id IN (?)`,
+    [ids]
+  );
+
+  return { cantidad: resultado.affectedRows, ids };
+}

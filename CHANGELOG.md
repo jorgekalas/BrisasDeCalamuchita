@@ -4,6 +4,42 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 
 ## [No publicado]
 
+### Bloque 7 — Lógica de reservas y máquina de estados ✅
+- **5 endpoints nuevos** que implementan la máquina de estados:
+    - `POST /api/reservas` — cliente crea reserva (Pendiente, bloqueo 2hs)
+    - `POST /api/reservas/:id/confirmar` — admin: Pendiente → Confirmada
+    - `POST /api/reservas/:id/cancelar` — cliente dueño o admin: Pendiente/Confirmada → Cancelada
+    - `POST /api/reservas/:id/check-in` — admin: Confirmada → En curso
+    - `POST /api/reservas/:id/check-out` — admin: En curso → Finalizada
+- **Reglas de negocio implementadas** (las 10 del documento base):
+    - **RN-01** No solapamiento: query con WHERE de rangos antes del INSERT
+    - **RN-02** Bloqueo 2hs: `bloqueo_hasta = DATE_ADD(NOW(), INTERVAL 120 MINUTE)`
+    - **RN-03** Cancelación automática: cron interno cada 60s
+    - **RN-04** Cantidad 4-10 huéspedes: validado en Zod + CHECK BD + validación contra capacidad real de la propiedad
+    - **RN-05** Máx 1 vehículo: UNIQUE en BD + se crea en la misma transacción
+    - **RN-06** Solo admin confirma: middleware `requiereAdmin`
+    - **RN-07** Cliente cancela: solo Pendiente/Confirmada propias, con 24hs de anticipación
+    - **RN-08** Check-in/out solo admin: middleware
+    - **RN-10** Fecha futura: validado en Zod (no acepta hoy ni anterior)
+- **Cron interno** (`src/tareas/cancelarBloqueosVencidos.js`):
+    - `setInterval` de 60 segundos
+    - Guard contra ejecuciones solapadas si una toma más de 60s
+    - Se inicia desde `servidor.js` y se detiene en graceful shutdown
+    - Deshabilitado en entorno `pruebas` (no ensucia tests)
+- **Creación atómica** con transacción BEGIN/COMMIT/ROLLBACK:
+    - Inserta reserva + vehículo (si vino) en una sola transacción
+    - Si falla el vehículo, hace rollback de la reserva
+- **Validación de propiedad activa** al crear: rechaza reservas para propiedades pausadas
+- **Validación de capacidad real** al crear: además del rango Zod (4-10), valida contra `capacidad_minima/maxima` actual de la propiedad
+- **Helper de fechas** (`aISODia`) que compara strings YYYY-MM-DD para evitar bugs con zonas horarias entre cliente, servidor y BD
+- **Mensajes claros para el frontend**: cada error de regla devuelve un mensaje explicativo con código `REGLA_NEGOCIO`, `CONFLICTO`, `NO_AUTORIZADO`
+- **Validado end-to-end con 42 tests in-memory**:
+    - Creación: 13 casos (auth, validaciones, solapamiento)
+    - Confirmar: 6 casos
+    - Cancelar: 8 casos (autorización, ventana 24hs, etc.)
+    - Check-in/out: 9 casos (autorización, fecha en rango, transiciones inválidas)
+    - Cron: 3 casos (detecta bloqueos vencidos, cancela correctamente)
+
 ### Bloque 6 — Endpoints CRUD básicos ✅
 - **10 endpoints nuevos** organizados en 3 recursos:
     - **Propiedad** (`/api/propiedad`):

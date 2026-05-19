@@ -42,6 +42,47 @@ rutasReservas.get('/:id',
 
 
 // =============================================================
+//   MAQUINA DE ESTADOS (Bloque 7)
+// =============================================================
+
+// --- Crear reserva (cliente logueado) ---
+//   La validacion de que sea cliente (no admin) la hace el servicio,
+//   porque necesita saber el tipo del usuario actual.
+rutasReservas.post('/',
+  requiereAuth,
+  async$(reservaControlador.crear)
+);
+
+// --- Confirmar (solo admin) ---
+rutasReservas.post('/:id/confirmar',
+  requiereAuth,
+  requiereAdmin,
+  async$(reservaControlador.confirmar)
+);
+
+// --- Cancelar (cliente dueño o admin) ---
+//   La autorizacion fina la hace el servicio, no el middleware.
+rutasReservas.post('/:id/cancelar',
+  requiereAuth,
+  async$(reservaControlador.cancelar)
+);
+
+// --- Check-in (solo admin) ---
+rutasReservas.post('/:id/check-in',
+  requiereAuth,
+  requiereAdmin,
+  async$(reservaControlador.checkIn)
+);
+
+// --- Check-out (solo admin) ---
+rutasReservas.post('/:id/check-out',
+  requiereAuth,
+  requiereAdmin,
+  async$(reservaControlador.checkOut)
+);
+
+
+// =============================================================
 //   Router separado para /api/mis-reservas
 // =============================================================
 //   Se monta en /api/mis-reservas en app.js. Un router distinto

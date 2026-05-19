@@ -14,8 +14,12 @@
 // =============================================================
 
 import { app } from './app.js';
-import { env } from './config/env.js';
+import { env, esPruebas } from './config/env.js';
 import { probarConexion, cerrarPool } from './config/bd.js';
+import {
+  iniciarCronCancelarBloqueosVencidos,
+  detenerCronCancelarBloqueosVencidos,
+} from './tareas/cancelarBloqueosVencidos.js';
 
 
 // -------------------------------------------------------------
@@ -60,6 +64,17 @@ const servidor = app.listen(env.PUERTO, () => {
 
 
 // -------------------------------------------------------------
+//   2.b Arrancar las tareas en segundo plano
+// -------------------------------------------------------------
+//   En entorno de pruebas no las arrancamos: ensucia los tests
+//   con cancelaciones automaticas y queda corriendo el timer.
+// -------------------------------------------------------------
+if (!esPruebas) {
+  iniciarCronCancelarBloqueosVencidos();
+}
+
+
+// -------------------------------------------------------------
 //   3. Graceful shutdown
 // -------------------------------------------------------------
 // Cuando recibimos SIGTERM (deploy/contenedor) o SIGINT (Ctrl+C),
@@ -79,13 +94,17 @@ async function shutdown(senial) {
   }, 10_000);
 
   try {
-    // 1. Cerrar el servidor HTTP (deja de aceptar nuevas requests).
+    // 1. Detener tareas en segundo plano
+    detenerCronCancelarBloqueosVencidos();
+    console.log('   ✓ Tareas en segundo plano detenidas');
+
+    // 2. Cerrar el servidor HTTP (deja de aceptar nuevas requests).
     await new Promise((resolve, reject) => {
       servidor.close(err => (err ? reject(err) : resolve()));
     });
     console.log('   ✓ Servidor HTTP cerrado');
 
-    // 2. Cerrar el pool de MySQL.
+    // 3. Cerrar el pool de MySQL.
     await cerrarPool();
     console.log('   ✓ Pool de MySQL cerrado');
 

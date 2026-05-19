@@ -4,6 +4,31 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 
 ## [No publicado]
 
+### Bloque 6 — Endpoints CRUD básicos ✅
+- **10 endpoints nuevos** organizados en 3 recursos:
+    - **Propiedad** (`/api/propiedad`):
+        - `GET /` y `GET /:id` — públicos, datos de la propiedad para la landing
+        - `PUT /:id` — admin: edita precio, capacidad, descripción
+    - **Usuarios** (`/api/usuarios`):
+        - `GET /` — admin: listar clientes con paginación
+        - `GET /:id` — admin: detalle
+        - `GET /yo` — auth: alias de `/api/auth/yo`
+        - `PUT /yo` — auth: editar perfil propio (transacción usuario+cliente)
+    - **Reservas** (`/api/reservas`, `/api/mis-reservas`):
+        - `GET /reservas/disponibilidad` — público: fechas ocupadas para el calendario
+        - `GET /reservas` — admin: listado con filtro por estado y paginación
+        - `GET /reservas/:id` — auth: detalle (admin ve todo; cliente solo lo suyo)
+        - `GET /mis-reservas` — auth cliente: reservas propias ordenadas (en curso → pendientes → confirmadas → finalizadas → canceladas → no show)
+- **Helper de paginación** (`src/utilidades/paginacion.js`):
+    - `obtenerPaginacion(req)` parsea `?pagina=1&porPagina=10` con Zod (limite máx 100)
+    - `construirMetadata(total, pagina, porPagina)` arma `{ paginacion: { pagina, porPagina, total, totalPaginas, hayProxima, hayAnterior } }`
+- **JOINs anidados en reservas**: una sola query devuelve `reserva.cliente`, `reserva.pago` y `reserva.vehiculo` poblados. Sin N+1 queries.
+- **Autorización fina**: el cliente puede ver el detalle de SUS reservas pero recibe 403 si intenta ver una ajena (validación en `reservaServicio.obtener`).
+- **Filtrado por estado** con ENUM de Zod: solo acepta los 6 estados válidos, rechaza el resto con 400.
+- **Modelo de usuario extendido** con `listarPorTipo()` y `actualizarPerfil()` (transacción que toca `usuario` y `cliente` atómicamente).
+- **Validador unificado** (`src/validadores/recursosValidador.js`) con schemas Zod para los 3 recursos.
+- **Validado end-to-end** con 50 tests in-memory: cubren los 10 endpoints, todos los casos de autorización (sin token / cliente / admin), validación de inputs, paginación, filtros y anidación de relaciones.
+
 ### Bloque 5 — Sistema de autenticación (JWT + bcrypt) ✅
 - **Modelo de usuario** (`src/modelos/usuarioModelo.js`):
     - `buscarPorEmail()` / `buscarPorId()` con JOIN a cliente y administrador

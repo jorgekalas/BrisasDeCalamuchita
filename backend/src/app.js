@@ -18,6 +18,9 @@ import morgan from 'morgan';
 import { env, esDesarrollo, esPruebas } from './config/env.js';
 import { rutasSalud } from './rutas/salud.js';
 import { rutasAuth } from './rutas/auth.js';
+import { rutasPropiedad } from './rutas/propiedad.js';
+import { rutasReservas, rutasMisReservas } from './rutas/reservas.js';
+import { rutasUsuarios } from './rutas/usuarios.js';
 import { notFound } from './middlewares/notFound.js';
 import { manejadorErrores } from './middlewares/manejadorErrores.js';
 
@@ -31,7 +34,7 @@ export const app = express();
 // --- Seguridad: headers HTTP defensivos ---
 // Helmet setea ~12 headers de seguridad (CSP, HSTS, X-Frame, etc.)
 // que protegen contra ataques comunes (XSS, clickjacking, etc.).
-// app.use(helmet());
+app.use(helmet());
 
 // --- CORS: permitir requests desde el frontend ---
 // En desarrollo permitimos todo. En produccion solo el dominio
@@ -66,6 +69,12 @@ app.use('/api/salud', rutasSalud);
 // Autenticacion: registro, login, datos del usuario actual.
 app.use('/api/auth', rutasAuth);
 
+// Recursos del negocio (Bloque 6 — CRUD basico)
+app.use('/api/propiedad',    rutasPropiedad);
+app.use('/api/reservas',     rutasReservas);
+app.use('/api/mis-reservas', rutasMisReservas);
+app.use('/api/usuarios',     rutasUsuarios);
+
 // Endpoint raiz: mensaje informativo para que no de 404.
 app.get('/', (_req, res) => {
   res.json({
@@ -75,11 +84,6 @@ app.get('/', (_req, res) => {
     documentacion: '/api/salud',
   });
 });
-
-// TODO: aca van a ir las rutas de los proximos bloques:
-// app.use('/api/usuarios', rutasUsuarios);
-// app.use('/api/reservas', rutasReservas);
-// etc.
 
 
 // =============================================================

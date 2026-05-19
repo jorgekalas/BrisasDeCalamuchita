@@ -96,7 +96,115 @@ export async function existeEmail(email) {
 
 
 // -------------------------------------------------------------
-//   Crear cliente (usuario + cliente en transaccion)
+//   Listar usuarios por tipo (clientes o administradores)
+// -------------------------------------------------------------
+//   Devuelve { usuarios, total } para paginar correctamente.
+//   Por defecto trae solo activos. Si pasas activo=false trae
+//   los desactivados.
+// -------------------------------------------------------------
+export async function listarPorTipo(tipo, { offset = 0, limite = 10, activo = true } = {}) {
+  const filtroActivo = activo === false ? '' : 'AND u.activo = TRUE';
+
+  const [filasConteo] = await pool.query(
+    `SELECT COUNT(*) AS total
+       FROM usuario u
+      WHERE u.tipo = ? ${filtroActivo}`,
+    [tipo]
+  );
+  const total = filasConteo[0].total;
+
+  const [filas] = await pool.query(
+    `SELECT
+       u.id,
+       u.email,
+       u.nombre,
+       u.apellido,
+       u.telefono,
+       u.tipo,
+       u.activo,
+       u.creado_en,
+       c.dni,
+       c.fecha_nacimiento
+     FROM usuario u
+     LEFT JOIN cliente c ON c.usuario_id = u.id
+     WHERE u.tipo = ? ${filtroActivo}
+     ORDER BY u.apellido, u.nombre
+     LIMIT ? OFFSET ?`,
+    [tipo, limite, offset]
+  );
+
+  return { usuarios: filas, total };
+}
+
+
+// -------------------------------------------------------------
+//   Actualizar perfil del usuario
+// -------------------------------------------------------------
+//   Solo permite editar los campos "del perfil": nombre,
+//   apellido, telefono, dni, fecha_nacimiento. NO permite
+//   cambiar email ni password (esos van por endpoints
+//   separados con validaciones extra).
+//
+//   Usa transaccion porque actualiza usuario Y cliente (que
+//   son tablas separadas por la herencia).
+// -------------------------------------------------------------
+export async function actualizarPerfil(usuarioId, cambios) {
+  const conexion = await pool.getConnection();
+  try {
+    await conexion.beginTransaction();
+
+    // --- Tabla usuario: nombre, apellido, telefono ---
+    const camposUsuario = ['nombre', 'apellido', 'telefono'];
+    const setUsuario = [];
+    const valoresUsuario = [];
+
+    for (const campo of camposUsuario) {
+      if (cambios[campo] !== undefined) {
+        setUsuario.push(`${campo} = ?`);
+        valoresUsuario.push(cambios[campo]);
+      }
+    }
+
+    if (setUsuario.length > 0) {
+      valoresUsuario.push(usuarioId);
+      await conexion.query(
+        `UPDATE usuario SET ${setUsuario.join(', ')} WHERE id = ?`,
+        valoresUsuario
+      );
+    }
+
+    // --- Tabla cliente: dni, fecha_nacimiento ---
+    const camposCliente = ['dni', 'fecha_nacimiento'];
+    const setCliente = [];
+    const valoresCliente = [];
+
+    for (const campo of camposCliente) {
+      if (cambios[campo] !== undefined) {
+        setCliente.push(`${campo} = ?`);
+        valoresCliente.push(cambios[campo]);
+      }
+    }
+
+    if (setCliente.length > 0) {
+      valoresCliente.push(usuarioId);
+      await conexion.query(
+        `UPDATE cliente SET ${setCliente.join(', ')} WHERE usuario_id = ?`,
+        valoresCliente
+      );
+    }
+
+    await conexion.commit();
+
+    // Devolver el usuario completo actualizado
+    return await buscarPorId(usuarioId);
+  } catch (error) {
+    await conexion.rollback();
+    throw error;
+  } finally {
+    conexion.release();
+  }
+}
+
 // -------------------------------------------------------------
 //   Como tenemos herencia con tablas separadas, crear un
 //   cliente implica DOS inserts: uno en `usuario` y otro en

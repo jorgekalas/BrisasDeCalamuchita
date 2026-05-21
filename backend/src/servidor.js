@@ -20,6 +20,10 @@ import {
   iniciarCronCancelarBloqueosVencidos,
   detenerCronCancelarBloqueosVencidos,
 } from './tareas/cancelarBloqueosVencidos.js';
+import {
+  iniciarCronEnviarNotificaciones,
+  detenerCronEnviarNotificaciones,
+} from './tareas/enviarNotificacionesPendientes.js';
 
 
 // -------------------------------------------------------------
@@ -71,6 +75,7 @@ const servidor = app.listen(env.PUERTO, () => {
 // -------------------------------------------------------------
 if (!esPruebas) {
   iniciarCronCancelarBloqueosVencidos();
+  iniciarCronEnviarNotificaciones();
 }
 
 
@@ -96,6 +101,7 @@ async function shutdown(senial) {
   try {
     // 1. Detener tareas en segundo plano
     detenerCronCancelarBloqueosVencidos();
+    detenerCronEnviarNotificaciones();
     console.log('   ✓ Tareas en segundo plano detenidas');
 
     // 2. Cerrar el servidor HTTP (deja de aceptar nuevas requests).

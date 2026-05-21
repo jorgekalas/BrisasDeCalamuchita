@@ -46,6 +46,7 @@ const schemaEnv = z.object({
   JWT_EXPIRACION: z.string().default('24h'),
 
   // --- Email (Bloque 8) ---
+  EMAIL_MODO: z.enum(['simulado', 'real']).default('simulado'),
   EMAIL_HOST: z.string().optional(),
   EMAIL_PUERTO: z.coerce.number().optional(),
   EMAIL_USUARIO: z.string().email().optional(),

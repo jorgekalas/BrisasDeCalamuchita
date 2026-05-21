@@ -4,6 +4,61 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 
 ## [No publicado]
 
+### Bloque 8 — Notificaciones por email asíncronas ✅
+- **Patrón Outbox + cron worker** para envío asincrónico de emails:
+    - Cada cambio de estado relevante en una reserva inserta una fila en
+      la tabla `notificacion` con `estado_envio = 'pendiente'`
+    - Un cron interno cada 15s procesa el lote pendiente (max 20 por ciclo)
+    - Reintenta hasta 3 veces si falla, después marca como `fallida`
+    - Los endpoints HTTP responden inmediato sin esperar SMTP
+- **5 tipos de notificación** (RN-09 completa):
+    - `solicitud_recibida` — al crear reserva (estado Pendiente)
+    - `reserva_confirmada` — admin confirma
+    - `reserva_cancelada` — cliente o admin cancela
+    - `bloqueo_vencido` — cron auto-cancela por no confirmar en 2hs
+    - `reserva_finalizada` — admin hace check-out
+- **Modo dual** controlado por variable `EMAIL_MODO`:
+    - `simulado` (default): loggea el email a consola, no envía nada
+      (perfecto para desarrollo y tests)
+    - `real`: envía por Gmail SMTP con Nodemailer (requiere app password)
+- **5 plantillas HTML** en `src/plantillas/emails.js`:
+    - Layout común con header verde y footer
+    - Helpers `formatearFecha()` y `formatearMoneda()` con locale es-AR
+    - Estilos inline para máxima compatibilidad con clientes de correo
+    - Sin emojis (ajuste solicitado por el docente)
+- **Servicios separados**:
+    - `notificacionServicio.js`: registra/busca/marca filas en la tabla
+      (`registrar()`, `buscarPendientes()`, `marcarEnviada()`, `marcarFallida()`)
+    - `emailServicio.js`: capa de envío SMTP con `enviar()` y `verificarConexion()`.
+      Lazy initialization de Nodemailer (solo se carga si EMAIL_MODO=real).
+      Nunca tira excepciones: devuelve `{ ok, error? }`.
+- **Cron worker** (`src/tareas/enviarNotificacionesPendientes.js`):
+    - Intervalo de 15 segundos
+    - Procesamiento secuencial (no paralelo) para no abusar de Gmail
+    - Guard contra ejecuciones solapadas
+    - Logs cuando hay actividad: `[notif] Lote procesado: X enviadas, Y fallidas`
+- **Hooks en el servicio de reservas** (no tira si la notificación falla):
+    - `crearReserva()` → `solicitud_recibida`
+    - `confirmar()` → `reserva_confirmada`
+    - `cancelar()` → `reserva_cancelada`
+    - `checkOut()` → `reserva_finalizada`
+- **Hook en el cron de bloqueos vencidos**: cada reserva auto-cancelada
+  genera un email tipo `bloqueo_vencido`
+- **Variables nuevas en `.env.ejemplo`**: `EMAIL_MODO`, `EMAIL_HOST`,
+  `EMAIL_PUERTO`, `EMAIL_USUARIO`, `EMAIL_PASSWORD`, `EMAIL_REMITENTE_NOMBRE`
+- **Validado end-to-end con 39 tests**:
+    - Plantillas (15): cada una genera asunto + cuerpo HTML con datos correctos
+    - EmailServicio simulado (3): envía, marca simulado, verifica conexión
+    - Hooks (12): cada cambio de estado dispara la notificación correcta
+    - Cron de bloqueos vencidos (2): registra `bloqueo_vencido`
+    - Cron de envío (2): procesa pendientes y las marca como `enviada`
+
+### README actualizado (sin emojis)
+- Reescritura completa del README principal, removiendo todos los emojis
+  por pedido del docente
+- Información actualizada al estado real del proyecto (incluyendo puertos
+  reales como 3307 y 8081, no los defaults)
+
 ### Bloque 7 — Lógica de reservas y máquina de estados ✅
 - **5 endpoints nuevos** que implementan la máquina de estados:
     - `POST /api/reservas` — cliente crea reserva (Pendiente, bloqueo 2hs)

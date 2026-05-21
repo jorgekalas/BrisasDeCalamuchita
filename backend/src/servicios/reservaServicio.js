@@ -6,6 +6,7 @@
 
 import * as reservaModelo from '../modelos/reservaModelo.js';
 import * as propiedadModelo from '../modelos/propiedadModelo.js';
+import * as notificacionServicio from './notificacionServicio.js';
 import {
   NoEncontrado,
   NoAutorizado,
@@ -223,6 +224,9 @@ export async function crearReserva(datos, usuarioActual) {
     minutosBloqueo: MINUTOS_BLOQUEO,
   });
 
+  // Disparar notificacion de "solicitud recibida" (asincronica, RN-09)
+  await notificacionServicio.registrar('solicitud_recibida', reserva);
+
   return reserva;
 }
 
@@ -245,9 +249,14 @@ export async function confirmar(reservaId, usuarioActual) {
     );
   }
 
-  return await reservaModelo.cambiarEstado(reservaId, 'Confirmada', {
+  const actualizada = await reservaModelo.cambiarEstado(reservaId, 'Confirmada', {
     adminId: usuarioActual.id,
   });
+
+  // Notificar al cliente que su reserva fue confirmada (RN-09)
+  await notificacionServicio.registrar('reserva_confirmada', actualizada);
+
+  return actualizada;
 }
 
 
@@ -289,7 +298,12 @@ export async function cancelar(reservaId, usuarioActual) {
     }
   }
 
-  return await reservaModelo.cambiarEstado(reservaId, 'Cancelada');
+  const actualizada = await reservaModelo.cambiarEstado(reservaId, 'Cancelada');
+
+  // Notificar al cliente que su reserva fue cancelada (RN-09)
+  await notificacionServicio.registrar('reserva_cancelada', actualizada);
+
+  return actualizada;
 }
 
 
@@ -342,5 +356,10 @@ export async function checkOut(reservaId, usuarioActual) {
     );
   }
 
-  return await reservaModelo.cambiarEstado(reservaId, 'Finalizada');
+  const actualizada = await reservaModelo.cambiarEstado(reservaId, 'Finalizada');
+
+  // Notificar agradecimiento al cliente (RN-09)
+  await notificacionServicio.registrar('reserva_finalizada', actualizada);
+
+  return actualizada;
 }

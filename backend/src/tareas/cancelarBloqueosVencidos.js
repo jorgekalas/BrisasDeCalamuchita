@@ -18,6 +18,7 @@
 // =============================================================
 
 import * as reservaModelo from '../modelos/reservaModelo.js';
+import * as notificacionServicio from '../servicios/notificacionServicio.js';
 
 
 // -------------------------------------------------------------
@@ -48,12 +49,20 @@ async function ejecutar() {
 
     if (resultado.cantidad > 0) {
       console.log(
-        `🕒 [cron] ${resultado.cantidad} reserva(s) cancelada(s) por bloqueo vencido: ` +
+        `[cron] ${resultado.cantidad} reserva(s) cancelada(s) por bloqueo vencido: ` +
         `IDs ${resultado.ids.join(', ')}`
       );
+
+      // Notificar al cliente de cada reserva cancelada (RN-09)
+      for (const idReserva of resultado.ids) {
+        const reserva = await reservaModelo.buscarPorId(idReserva);
+        if (reserva) {
+          await notificacionServicio.registrar('bloqueo_vencido', reserva);
+        }
+      }
     }
   } catch (error) {
-    console.error('❌ [cron] Error cancelando bloqueos vencidos:', error.message);
+    console.error('[cron] Error cancelando bloqueos vencidos:', error.message);
   } finally {
     ejecucionEnProgreso = false;
   }
@@ -74,7 +83,7 @@ export function iniciarCronCancelarBloqueosVencidos() {
   ejecutar();
 
   intervaloId = setInterval(ejecutar, INTERVALO_MS);
-  console.log(`🕒 [cron] Cancelar bloqueos vencidos: cada ${INTERVALO_MS / 1000}s`);
+  console.log(`[cron] Cancelar bloqueos vencidos: cada ${INTERVALO_MS / 1000}s`);
 }
 
 

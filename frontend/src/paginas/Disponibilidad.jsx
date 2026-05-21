@@ -1,20 +1,50 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Calendario from '../componentes/Calendario';
-import { useApp } from '../ContextoApp';
+import { useAuth } from '../contexto/ContextoAuth';
+import { useApi } from '../ganchos/useApi';
+import * as apiDisponibilidad from '../api/disponibilidad';
+import * as apiPropiedad from '../api/propiedad';
+import { enriquecerPropiedad, propiedadDefault } from '../datos/propiedadConDefaults';
+import { expandirRangosAFechas } from '../datos/adaptadorDisponibilidad';
 import { formatearFecha, calcularNoches, formatearPrecio } from '../utilidades/formato';
-import { propiedad } from '../datos/mock';
-import { Calendar, Users, ArrowRight } from 'lucide-react';
+import { Calendar, Users, ArrowRight, AlertCircle } from 'lucide-react';
 
 /**
  * Página pública de consulta de disponibilidad.
+ * Trae del backend:
+ *  - GET /api/propiedad        → datos de la propiedad (precio, capacidad)
+ *  - GET /api/reservas/disponibilidad → fechas ocupadas (estado != cancelada/finalizada)
+ *
  * Permite al visitante explorar el calendario y, si lo desea,
- * arrancar el proceso de reserva (que lo redirige a login si no está autenticado).
+ * arrancar el proceso de reserva (redirige a login si no está autenticado).
  */
 export default function Disponibilidad() {
-  const { usuario } = useApp();
+  const { estaAutenticado } = useAuth();
   const navigate = useNavigate();
   const [seleccion, setSeleccion] = useState({ desde: null, hasta: null });
+
+  // --- Cargar propiedad (para precio y capacidad en el sidebar) ---
+  const { datos: dataPropiedad } = useApi(
+    () => apiPropiedad.listarPropiedades(),
+    []
+  );
+  const propiedad = dataPropiedad && dataPropiedad[0]
+    ? enriquecerPropiedad(dataPropiedad[0])
+    : propiedadDefault;
+
+  // --- Cargar disponibilidad (rangos ocupados) ---
+  const {
+    datos: rangosOcupados,
+    cargando: cargandoDisp,
+    error: errorDisp,
+  } = useApi(() => apiDisponibilidad.obtenerDisponibilidad(), []);
+
+  // Expandir los rangos del backend a fechas individuales que el
+  // componente del calendario sabe pintar
+  const fechasOcupadas = rangosOcupados
+    ? expandirRangosAFechas(rangosOcupados)
+    : [];
 
   const noches = calcularNoches(seleccion.desde, seleccion.hasta);
   const total = noches * propiedad.precioPorNoche;
@@ -23,7 +53,7 @@ export default function Disponibilidad() {
     if (!seleccion.desde || !seleccion.hasta) return;
     // Guardamos en sessionStorage para no perderlo si va a login
     sessionStorage.setItem('fechasReserva', JSON.stringify(seleccion));
-    if (!usuario) navigate('/ingresar?volver=/reservar');
+    if (!estaAutenticado) navigate('/ingresar?volver=/reservar');
     else navigate('/reservar');
   };
 
@@ -41,10 +71,31 @@ export default function Disponibilidad() {
         </p>
       </div>
 
+      {/* Error al cargar disponibilidad */}
+      {errorDisp && (
+        <div className="max-w-2xl mx-auto mb-6 p-4 rounded-xl bg-red-50 border border-red-200 text-red-800 text-sm flex items-start gap-2">
+          <AlertCircle size={18} className="mt-0.5 flex-shrink-0" />
+          <div>
+            <strong>No pudimos cargar la disponibilidad.</strong>
+            <p className="mt-1">{errorDisp.mensaje}. El calendario se muestra sin fechas ocupadas.</p>
+          </div>
+        </div>
+      )}
+
       <div className="grid lg:grid-cols-3 gap-8">
         {/* Calendario */}
         <div className="lg:col-span-2">
-          <Calendario modo="seleccionar" onSeleccionRango={setSeleccion} />
+          {cargandoDisp ? (
+            <div className="tarjeta text-center py-20 text-piedra-700 text-sm">
+              Cargando calendario...
+            </div>
+          ) : (
+            <Calendario
+              modo="seleccionar"
+              fechasOcupadas={fechasOcupadas}
+              onSeleccionRango={setSeleccion}
+            />
+          )}
         </div>
 
         {/* Resumen */}

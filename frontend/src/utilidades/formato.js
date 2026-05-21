@@ -2,11 +2,37 @@
  * Utilidades de formato — Brisas de Calamuchita
  */
 
+
+/**
+ * Normaliza una entrada de fecha a un objeto Date.
+ *
+ * Acepta tres formatos:
+ *   1. Date object (devuelve tal cual)
+ *   2. String corto "YYYY-MM-DD" (le agrega T12:00:00 hora local para
+ *      evitar problemas de zona horaria, asi un 2027-06-01 se ve como
+ *      1 de junio y no como 31 de mayo en GMT-3)
+ *   3. String ISO completo "2027-06-01T03:00:00.000Z" (lo parsea directo,
+ *      es como viene del backend cuando mysql2 devuelve un DATE)
+ */
+const aDate = (fecha) => {
+  if (fecha instanceof Date) return fecha;
+  if (typeof fecha !== 'string' || !fecha) return new Date(NaN);
+
+  // Si tiene T (es un ISO completo), lo parseamos tal cual
+  if (fecha.includes('T')) return new Date(fecha);
+
+  // Si es solo "YYYY-MM-DD", le agregamos mediodia para evitar
+  // que el offset de zona horaria nos mande al dia anterior
+  return new Date(fecha + 'T12:00:00');
+};
+
+
 /**
  * Formatea una fecha "YYYY-MM-DD" o Date a "12 de mayo".
  */
 export const formatearFecha = (fecha, opciones = {}) => {
-  const d = typeof fecha === 'string' ? new Date(fecha + 'T12:00:00') : fecha;
+  const d = aDate(fecha);
+  if (isNaN(d)) return '—';
   return d.toLocaleDateString('es-AR', {
     day: 'numeric',
     month: 'long',
@@ -14,12 +40,14 @@ export const formatearFecha = (fecha, opciones = {}) => {
   });
 };
 
+
 /**
  * Formatea una fecha mostrando siempre el año: "12 de mayo 2026".
  * Útil en listados y paneles donde el año es información importante.
  */
 export const formatearFechaConAnio = (fecha) => {
-  const d = typeof fecha === 'string' ? new Date(fecha + 'T12:00:00') : fecha;
+  const d = aDate(fecha);
+  if (isNaN(d)) return '—';
   return d.toLocaleDateString('es-AR', {
     day: 'numeric',
     month: 'long',
@@ -27,30 +55,43 @@ export const formatearFechaConAnio = (fecha) => {
   });
 };
 
+
 /**
  * Formatea un rango de fechas de manera compacta.
  * Si ambas son del mismo año: "12 de mayo → 17 de mayo 2026"
  * Si son de años distintos:    "28 de diciembre 2026 → 3 de enero 2027"
  */
 export const formatearRangoFechas = (ingreso, egreso) => {
-  const di = new Date(ingreso + 'T12:00:00');
-  const de = new Date(egreso + 'T12:00:00');
+  const di = aDate(ingreso);
+  const de = aDate(egreso);
+  if (isNaN(di) || isNaN(de)) return '— → —';
   if (di.getFullYear() === de.getFullYear()) {
     return `${formatearFecha(ingreso)} → ${formatearFechaConAnio(egreso)}`;
   }
   return `${formatearFechaConAnio(ingreso)} → ${formatearFechaConAnio(egreso)}`;
 };
 
+
 /**
  * Calcula la cantidad de noches entre dos fechas.
+ *
+ * Para evitar errores por zona horaria, usamos el aDate normalizado
+ * y luego truncamos a dia (sin hora) para que la diferencia sea
+ * exacta en dias completos.
  */
 export const calcularNoches = (ingreso, egreso) => {
   if (!ingreso || !egreso) return 0;
-  const d1 = new Date(ingreso);
-  const d2 = new Date(egreso);
-  const ms = d2.getTime() - d1.getTime();
+  const d1 = aDate(ingreso);
+  const d2 = aDate(egreso);
+  if (isNaN(d1) || isNaN(d2)) return 0;
+
+  // Trunco a medianoche para que la diferencia sea en dias enteros
+  const m1 = new Date(d1.getFullYear(), d1.getMonth(), d1.getDate());
+  const m2 = new Date(d2.getFullYear(), d2.getMonth(), d2.getDate());
+  const ms = m2.getTime() - m1.getTime();
   return Math.max(0, Math.round(ms / (1000 * 60 * 60 * 24)));
 };
+
 
 /**
  * Formatea un precio en pesos argentinos.
@@ -63,19 +104,12 @@ export const formatearPrecio = (numero) => {
   }).format(numero);
 };
 
+
 /**
  * Devuelve la fecha de hoy en formato YYYY-MM-DD.
  */
 export const hoy = () => new Date().toISOString().split('T')[0];
 
-/**
- * Genera un ID de reserva ficticio para la demo.
- */
-export const generarIdReserva = () => {
-  const numero = Math.floor(Math.random() * 9000) + 1000;
-  const anio = new Date().getFullYear();
-  return `RES-${anio}-${numero}`;
-};
 
 /**
  * Normaliza un número de teléfono a formato internacional para WhatsApp.
@@ -90,6 +124,7 @@ export const normalizarTelefono = (telefono) => {
   if (!limpio.startsWith('54')) limpio = '54' + limpio;
   return limpio;
 };
+
 
 /**
  * Construye una URL de WhatsApp con mensaje prearmado.

@@ -1,13 +1,34 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useApp } from '../ContextoApp';
-import { propiedad } from '../datos/mock';
+import { useAuth } from '../contexto/ContextoAuth';
+import { useApi } from '../ganchos/useApi';
+import * as apiPropiedad from '../api/propiedad';
+import * as apiReservas from '../api/reservas';
+import { enriquecerPropiedad, propiedadDefault } from '../datos/propiedadConDefaults';
+import { extraerError } from '../api/cliente';
 import { formatearFecha, calcularNoches, formatearPrecio } from '../utilidades/formato';
-import { Users, Car, MessageSquare, Phone, ArrowRight, ArrowLeft, Check } from 'lucide-react';
+import { Users, Car, MessageSquare, Phone, ArrowRight, ArrowLeft, Check, AlertCircle } from 'lucide-react';
 
+/**
+ * Pagina de creacion de reserva.
+ * - Lee las fechas que el usuario eligio en /disponibilidad (via sessionStorage)
+ * - Hace POST /api/reservas con los datos del form + vehiculo (si aplica)
+ * - Maneja errores de validacion (400), conflicto de fechas (409), capacidad (422)
+ *
+ * NOTA: El telefono y observaciones que captura el form NO se mandan al
+ * backend (la tabla reserva solo guarda observaciones). El telefono se
+ * usa para coordinacion humana posterior; se incluye en las observaciones
+ * para que el admin lo vea.
+ */
 export default function Reservar() {
-  const { usuario, crearReserva } = useApp();
+  const { usuario } = useAuth();
   const navigate = useNavigate();
+
+  // Cargar propiedad para mostrar precio y capacidad en el resumen
+  const { datos: propiedadData } = useApi(() => apiPropiedad.listarPropiedades(), []);
+  const propiedad = propiedadData && propiedadData[0]
+    ? enriquecerPropiedad(propiedadData[0])
+    : propiedadDefault;
 
   const [fechas, setFechas] = useState({ desde: null, hasta: null });
   const [form, setForm] = useState({
@@ -17,13 +38,15 @@ export default function Reservar() {
     vehiculo: { patente: '', modelo: '' },
     observaciones: '',
   });
+  const [enviando, setEnviando] = useState(false);
+  const [error, setError] = useState(null);
 
+  // Cargar fechas guardadas y telefono del perfil
   useEffect(() => {
     if (!usuario) {
       navigate('/ingresar?volver=/reservar');
       return;
     }
-    // Autocompletar el teléfono de contacto con el del perfil
     setForm((prev) => ({ ...prev, telefonoContacto: usuario.telefono || '' }));
 
     const guardadas = sessionStorage.getItem('fechasReserva');
@@ -31,22 +54,62 @@ export default function Reservar() {
     else navigate('/disponibilidad');
   }, [usuario, navigate]);
 
+  // Cuando se carga la propiedad, ajustar huespedes al minimo valido
+  useEffect(() => {
+    if (propiedad && form.cantidadHuespedes < propiedad.capacidadMinima) {
+      setForm((prev) => ({ ...prev, cantidadHuespedes: propiedad.capacidadMinima }));
+    }
+  }, [propiedad.capacidadMinima]);
+
   if (!fechas.desde) return null;
 
   const noches = calcularNoches(fechas.desde, fechas.hasta);
   const total = noches * propiedad.precioPorNoche;
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const { sinVehiculo, vehiculo, ...resto } = form;
-    const reserva = crearReserva({
-      fechaIngreso: fechas.desde,
-      fechaEgreso: fechas.hasta,
-      vehiculo: sinVehiculo ? null : vehiculo,
-      ...resto,
-    });
-    sessionStorage.removeItem('fechasReserva');
-    navigate(`/reserva-enviada/${reserva.id}`);
+    setError(null);
+    setEnviando(true);
+
+    try {
+      // Armar el payload para el backend. El telefono de contacto va
+      // adentro de las observaciones para que el admin lo vea.
+      const obsConTelefono = [
+        form.telefonoContacto
+          ? `Telefono de contacto: ${form.telefonoContacto}`
+          : null,
+        form.observaciones,
+      ].filter(Boolean).join('\n\n');
+
+      const payload = {
+        fecha_ingreso: fechas.desde,
+        fecha_egreso: fechas.hasta,
+        cantidad_huespedes: form.cantidadHuespedes,
+        observaciones: obsConTelefono || undefined,
+      };
+
+      // Solo incluir vehiculo si el cliente no tildo "sin vehiculo"
+      if (!form.sinVehiculo && form.vehiculo.patente && form.vehiculo.modelo) {
+        payload.vehiculo = {
+          patente: form.vehiculo.patente.trim().toUpperCase(),
+          modelo: form.vehiculo.modelo.trim(),
+        };
+      }
+
+      const reservaCreada = await apiReservas.crearReserva(payload);
+
+      // Exito: limpiar fechas guardadas y navegar a la pagina de confirmacion
+      // pasando la reserva real via state para no tener que volver a pedirla.
+      sessionStorage.removeItem('fechasReserva');
+      navigate(`/reserva-enviada/${reservaCreada.id}`, {
+        state: { reserva: reservaCreada },
+      });
+    } catch (err) {
+      const e = extraerError(err);
+      setError(e);
+    } finally {
+      setEnviando(false);
+    }
   };
 
   return (
@@ -80,11 +143,13 @@ export default function Reservar() {
             <div className="flex items-center gap-4">
               <button type="button"
                 onClick={() => setForm({ ...form, cantidadHuespedes: Math.max(propiedad.capacidadMinima, form.cantidadHuespedes - 1) })}
-                className="w-12 h-12 rounded-full bg-crema-200 hover:bg-crema-300 text-piedra-900 font-bold text-xl transition-colors">−</button>
+                disabled={enviando}
+                className="w-12 h-12 rounded-full bg-crema-200 hover:bg-crema-300 text-piedra-900 font-bold text-xl transition-colors disabled:opacity-50">−</button>
               <div className="font-display text-4xl text-musgo-800 w-16 text-center">{form.cantidadHuespedes}</div>
               <button type="button"
                 onClick={() => setForm({ ...form, cantidadHuespedes: Math.min(propiedad.capacidadMaxima, form.cantidadHuespedes + 1) })}
-                className="w-12 h-12 rounded-full bg-crema-200 hover:bg-crema-300 text-piedra-900 font-bold text-xl transition-colors">+</button>
+                disabled={enviando}
+                className="w-12 h-12 rounded-full bg-crema-200 hover:bg-crema-300 text-piedra-900 font-bold text-xl transition-colors disabled:opacity-50">+</button>
             </div>
           </div>
 
@@ -109,6 +174,7 @@ export default function Reservar() {
               onChange={(e) => setForm({ ...form, telefonoContacto: e.target.value })}
               placeholder="+54 9 ..."
               className="input-natural"
+              disabled={enviando}
             />
             <p className="text-xs text-piedra-600 mt-2 italic">
               Lo cargamos por defecto desde tu perfil. Si preferís que te contactemos a otro número, modificalo acá.
@@ -136,10 +202,10 @@ export default function Reservar() {
                   setForm({
                     ...form,
                     sinVehiculo: e.target.checked,
-                    // Si tilda "sin vehículo", limpiamos los datos previos
                     vehiculo: e.target.checked ? { patente: '', modelo: '' } : form.vehiculo,
                   })
                 }
+                disabled={enviando}
                 className="mt-0.5 w-4 h-4 accent-musgo-700 cursor-pointer flex-shrink-0"
               />
               <div className="text-sm">
@@ -148,20 +214,21 @@ export default function Reservar() {
               </div>
             </label>
 
-            {/* Inputs de vehículo: solo si NO está tildado "sin vehículo" */}
             {!form.sinVehiculo && (
               <div className="grid sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs uppercase tracking-widest text-piedra-700 mb-2">Patente</label>
                   <input type="text" required value={form.vehiculo.patente}
                     onChange={(e) => setForm({ ...form, vehiculo: { ...form.vehiculo, patente: e.target.value.toUpperCase() } })}
-                    placeholder="AB123CD" maxLength={7} className="input-natural uppercase" />
+                    placeholder="AB123CD" maxLength={10} className="input-natural uppercase"
+                    disabled={enviando} />
                 </div>
                 <div>
                   <label className="block text-xs uppercase tracking-widest text-piedra-700 mb-2">Modelo</label>
                   <input type="text" required value={form.vehiculo.modelo}
                     onChange={(e) => setForm({ ...form, vehiculo: { ...form.vehiculo, modelo: e.target.value } })}
-                    placeholder="Marca y modelo" className="input-natural" />
+                    placeholder="Marca y modelo" className="input-natural"
+                    disabled={enviando} />
                 </div>
               </div>
             )}
@@ -181,11 +248,41 @@ export default function Reservar() {
             <textarea value={form.observaciones}
               onChange={(e) => setForm({ ...form, observaciones: e.target.value })}
               rows={4} placeholder="Opcional"
-              className="input-natural resize-none" />
+              className="input-natural resize-none"
+              disabled={enviando} />
           </div>
 
-          <button type="submit" className="btn-principal w-full text-lg !py-4">
-            Confirmar solicitud <ArrowRight size={20} />
+          {/* Error de la API */}
+          {error && (
+            <div className="tarjeta border-red-200 bg-red-50">
+              <div className="flex items-start gap-3">
+                <AlertCircle size={20} className="text-red-600 flex-shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <div className="font-medium text-red-900 mb-1">
+                    {error.codigo === 'CONFLICTO' && 'Las fechas ya no están disponibles'}
+                    {error.codigo === 'REGLA_NEGOCIO' && 'No pudimos crear la reserva'}
+                    {error.codigo === 'VALIDACION_FALLIDA' && 'Revisá los datos del formulario'}
+                    {!['CONFLICTO', 'REGLA_NEGOCIO', 'VALIDACION_FALLIDA'].includes(error.codigo) && 'Ocurrió un error'}
+                  </div>
+                  <div className="text-sm text-red-700">{error.mensaje}</div>
+                  {error.codigo === 'CONFLICTO' && (
+                    <button
+                      type="button"
+                      onClick={() => navigate('/disponibilidad')}
+                      className="mt-3 text-sm underline text-red-700 hover:text-red-900"
+                    >
+                      Elegir otras fechas →
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          <button type="submit" className="btn-principal w-full text-lg !py-4" disabled={enviando}>
+            {enviando ? 'Enviando solicitud...' : (
+              <>Confirmar solicitud <ArrowRight size={20} /></>
+            )}
           </button>
         </form>
 

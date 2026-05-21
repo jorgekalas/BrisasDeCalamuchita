@@ -1,13 +1,15 @@
 import { useMemo, useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { ESTADOS, obtenerFechasOcupadas } from '../datos/mock';
-import { useApp } from '../ContextoApp';
+import { ESTADOS } from '../datos/constantes';
 
 /**
  * Calendario mensual de disponibilidad.
  * Props:
  *  - modo: 'visualizar' | 'seleccionar'
  *  - onSeleccionRango: callback({ desde, hasta }) cuando se completa una selección
+ *  - fechasOcupadas: array de { fecha, estado, reservaId }.
+ *      Lo pasa la pagina padre (Disponibilidad) usando los datos del backend
+ *      via expandirRangosAFechas().
  */
 const NOMBRES_MES = [
   'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
@@ -16,10 +18,7 @@ const NOMBRES_MES = [
 
 const NOMBRES_DIA = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
 
-export default function Calendario({ modo = 'visualizar', onSeleccionRango }) {
-  const { reservas } = useApp();
-  const fechasOcupadas = useMemo(() => obtenerFechasOcupadas(reservas), [reservas]);
-
+export default function Calendario({ modo = 'visualizar', onSeleccionRango, fechasOcupadas = [] }) {
   const hoy = new Date();
   const [anio, setAnio] = useState(hoy.getFullYear());
   const [mes, setMes] = useState(hoy.getMonth());
@@ -51,105 +50,124 @@ export default function Calendario({ modo = 'visualizar', onSeleccionRango }) {
     else setMes(nuevoMes);
   };
 
-  const handleClickDia = (celda) => {
-    if (!celda || celda.esPasada || celda.ocupada) return;
-    if (modo !== 'seleccionar') return;
+  const handleClickDia = (dia) => {
+    if (!dia || dia.esPasada || dia.ocupada || modo !== 'seleccionar') return;
 
     if (!seleccion.desde || (seleccion.desde && seleccion.hasta)) {
-      const nueva = { desde: celda.iso, hasta: null };
+      // Empezar nueva selección
+      const nueva = { desde: dia.iso, hasta: null };
       setSeleccion(nueva);
+      onSeleccionRango?.(nueva);
     } else {
-      const desde = new Date(seleccion.desde);
-      const clic = new Date(celda.iso);
-      if (clic <= desde) {
-        setSeleccion({ desde: celda.iso, hasta: null });
+      // Completar selección
+      if (dia.iso <= seleccion.desde) {
+        const nueva = { desde: dia.iso, hasta: null };
+        setSeleccion(nueva);
+        onSeleccionRango?.(nueva);
       } else {
-        const nueva = { desde: seleccion.desde, hasta: celda.iso };
+        // Validar que no haya fechas ocupadas en el medio
+        const tieneOcupadasEnMedio = fechasOcupadas.some((f) => f.fecha > seleccion.desde && f.fecha < dia.iso);
+        if (tieneOcupadasEnMedio) {
+          // Reseteamos la selección
+          const nueva = { desde: dia.iso, hasta: null };
+          setSeleccion(nueva);
+          onSeleccionRango?.(nueva);
+          return;
+        }
+        const nueva = { desde: seleccion.desde, hasta: dia.iso };
         setSeleccion(nueva);
         onSeleccionRango?.(nueva);
       }
     }
   };
 
-  const estaEnRango = (iso) => {
+  const estaEnSeleccion = (iso) => {
     if (!seleccion.desde) return false;
-    const d = new Date(iso);
-    const inicio = new Date(seleccion.desde);
-    const fin = seleccion.hasta ? new Date(seleccion.hasta) : inicio;
-    return d >= inicio && d <= fin;
+    if (!seleccion.hasta) return iso === seleccion.desde;
+    return iso >= seleccion.desde && iso <= seleccion.hasta;
   };
 
   return (
     <div className="tarjeta">
-      {/* Navegación de mes */}
+      {/* Encabezado del mes */}
       <div className="flex items-center justify-between mb-6">
         <button
           onClick={() => mover(-1)}
-          className="p-2 rounded-full hover:bg-crema-200 transition-colors"
+          className="p-2 rounded-full hover:bg-crema-200 transition-colors text-piedra-700"
           aria-label="Mes anterior"
         >
-          <ChevronLeft size={20} className="text-musgo-700" />
+          <ChevronLeft size={20} />
         </button>
-        <h3 className="font-display text-xl text-musgo-800">
+        <h3 className="font-display text-xl text-piedra-900">
           {NOMBRES_MES[mes]} <span className="text-piedra-600">{anio}</span>
         </h3>
         <button
           onClick={() => mover(1)}
-          className="p-2 rounded-full hover:bg-crema-200 transition-colors"
+          className="p-2 rounded-full hover:bg-crema-200 transition-colors text-piedra-700"
           aria-label="Mes siguiente"
         >
-          <ChevronRight size={20} className="text-musgo-700" />
+          <ChevronRight size={20} />
         </button>
       </div>
 
-      {/* Nombres de día */}
-      <div className="grid grid-cols-7 gap-1 mb-2">
-        {NOMBRES_DIA.map((n, i) => (
-          <div key={i} className="text-center text-xs font-medium text-piedra-600 py-2">{n}</div>
+      {/* Encabezado de dias */}
+      <div className="grid grid-cols-7 gap-2 mb-2 text-center text-xs uppercase tracking-widest text-piedra-600">
+        {NOMBRES_DIA.map((d, i) => (
+          <div key={i} className="py-1">{d}</div>
         ))}
       </div>
 
-      {/* Grilla */}
-      <div className="grid grid-cols-7 gap-1">
-        {grilla.map((celda, i) => {
-          if (!celda) return <div key={i} />;
-          const enRango = estaEnRango(celda.iso);
-          const esExtremo = celda.iso === seleccion.desde || celda.iso === seleccion.hasta;
+      {/* Grilla del mes */}
+      <div className="grid grid-cols-7 gap-2">
+        {grilla.map((dia, i) => {
+          if (!dia) return <div key={i} />;
+          const enSel = estaEnSeleccion(dia.iso);
 
-          let clases = 'aspect-square flex items-center justify-center text-sm rounded-xl transition-all duration-200 relative ';
-          if (celda.esPasada) clases += 'text-piedra-600/40 cursor-not-allowed';
-          else if (celda.ocupada?.estado === ESTADOS.CONFIRMADA) clases += 'bg-terracota-100 text-terracota-800 cursor-not-allowed line-through';
-          else if (celda.ocupada?.estado === ESTADOS.PENDIENTE) clases += 'bg-amber-100 text-amber-800 cursor-not-allowed';
-          else if (esExtremo) clases += 'bg-musgo-700 text-crema-50 font-semibold scale-105';
-          else if (enRango) clases += 'bg-musgo-100 text-musgo-800';
-          else clases += 'hover:bg-crema-200 hover:text-musgo-700 cursor-pointer text-piedra-900';
+          let clases = 'aspect-square flex items-center justify-center rounded-xl text-sm font-medium transition-all relative ';
+          if (dia.esPasada) {
+            clases += 'text-piedra-400 cursor-not-allowed';
+          } else if (dia.ocupada) {
+            if (dia.ocupada.estado === ESTADOS.PENDIENTE) {
+              clases += 'bg-amber-100 text-amber-800 cursor-not-allowed line-through';
+            } else {
+              clases += 'bg-red-50 text-red-700 cursor-not-allowed line-through';
+            }
+          } else if (enSel) {
+            clases += 'bg-musgo-700 text-crema-50 cursor-pointer';
+          } else if (modo === 'seleccionar') {
+            clases += 'text-piedra-900 hover:bg-musgo-100 cursor-pointer';
+          } else {
+            clases += 'text-piedra-900';
+          }
 
           return (
             <button
               key={i}
-              onClick={() => handleClickDia(celda)}
+              onClick={() => handleClickDia(dia)}
               className={clases}
-              disabled={celda.esPasada || !!celda.ocupada}
-              title={
-                celda.ocupada?.estado === ESTADOS.CONFIRMADA ? 'Reservado' :
-                celda.ocupada?.estado === ESTADOS.PENDIENTE ? 'Pendiente de confirmación' :
-                'Disponible'
-              }
+              disabled={!dia || dia.esPasada || dia.ocupada || modo !== 'seleccionar'}
+              type="button"
             >
-              {celda.dia}
+              {dia.dia}
             </button>
           );
         })}
       </div>
 
       {/* Leyenda */}
-      <div className="mt-6 pt-6 border-t border-crema-200 flex flex-wrap gap-4 text-xs">
-        <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-crema-200" /> Disponible</div>
-        <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-amber-200" /> Pendiente</div>
-        <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-terracota-200" /> Reservado</div>
-        {modo === 'seleccionar' && (
-          <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-musgo-700" /> Tu selección</div>
-        )}
+      <div className="mt-6 pt-4 border-t border-crema-200 flex flex-wrap gap-4 text-xs text-piedra-700">
+        <div className="flex items-center gap-2">
+          <div className="w-4 h-4 rounded bg-musgo-700" />
+          <span>Tu selección</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-4 h-4 rounded bg-amber-100 border border-amber-300" />
+          <span>En proceso</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-4 h-4 rounded bg-red-50 border border-red-200" />
+          <span>Reservada</span>
+        </div>
       </div>
     </div>
   );

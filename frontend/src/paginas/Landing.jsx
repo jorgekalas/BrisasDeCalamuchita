@@ -1,11 +1,20 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { propiedad } from '../datos/mock';
+import { useApi } from '../ganchos/useApi';
+import * as apiPropiedad from '../api/propiedad';
+import { enriquecerPropiedad, propiedadDefault } from '../datos/propiedadConDefaults';
 import { ArrowRight, Users, Bed, BedDouble, Bath, Flame, Wifi, Car, PawPrint, ChefHat, Tv, MapPin, Star } from 'lucide-react';
 
 const ICONOS = { Users, Bed, BedDouble, Bath, Flame, Wifi, Car, PawPrint, ChefHat, Tv };
 
 export default function Landing() {
+  // Cargar propiedad del backend. Mientras carga (o si hay error)
+  // usamos los defaults para que la UI no se vea vacia.
+  const { datos } = useApi(() => apiPropiedad.listarPropiedades(), []);
+  const propiedad = datos && datos[0]
+    ? enriquecerPropiedad(datos[0])
+    : propiedadDefault;
+
   return (
     <div>
       {/* ===== HERO ===== */}

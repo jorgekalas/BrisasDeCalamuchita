@@ -1,5 +1,12 @@
-import { MapPin, Phone, Mail, Instagram } from 'lucide-react';
-import { propiedad } from '../datos/mock';
+import { MapPin, Phone, Instagram } from 'lucide-react';
+
+// Datos de contacto fijos del footer.
+// No vienen del backend porque son metadatos del negocio
+// que no cambian con frecuencia.
+const DIRECCION = 'Malvinas Argentinas 189, X5196 Santa Rosa de Calamuchita, Córdoba';
+const URL_MAPA = 'https://www.google.com/maps/place/Malvinas+Argentinas+189,+X5196+Santa+Rosa+de+Calamuchita,+C%C3%B3rdoba';
+const TELEFONO_DISPLAY = '+54 9 3546 52-8237';
+const TELEFONO_WA = 'https://wa.me/5493546528237';
 
 export default function Footer() {
   return (
@@ -18,21 +25,31 @@ export default function Footer() {
           <ul className="space-y-2 text-sm text-piedra-800">
             <li>
               <a
-                href={propiedad.urlMapa}
+                href={URL_MAPA}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-start gap-2 hover:text-musgo-700 transition-colors group"
               >
                 <MapPin size={14} className="text-musgo-600 mt-0.5 flex-shrink-0" />
                 <span>
-                  {propiedad.direccion}
+                  {DIRECCION}
                   <span className="text-musgo-500 ml-1 group-hover:text-musgo-700">↗</span>
                 </span>
               </a>
             </li>
-            <li className="flex items-center gap-2"><Phone size={14} className="text-musgo-600" /> +54 9 354 555 9999</li>
-            <li className="flex items-center gap-2"><Mail size={14} className="text-musgo-600" /> hola@brisascalamuchita.com.ar</li>
-            <li className="flex items-center gap-2"><Instagram size={14} className="text-musgo-600" /> @brisascalamuchita</li>
+            <li>
+              <a
+                href={TELEFONO_WA}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 hover:text-musgo-700 transition-colors"
+              >
+                <Phone size={14} className="text-musgo-600" /> {TELEFONO_DISPLAY}
+              </a>
+            </li>
+            <li className="flex items-center gap-2">
+              <Instagram size={14} className="text-musgo-600" /> @brisascalamuchita
+            </li>
           </ul>
         </div>
 

@@ -1,27 +1,45 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
-import { useApp } from '../ContextoApp';
-import { Mail, Lock, ArrowRight } from 'lucide-react';
+import { useAuth } from '../contexto/ContextoAuth';
+import { extraerError } from '../api/cliente';
+import { Mail, Lock, ArrowRight, AlertCircle, Clock } from 'lucide-react';
 
 export default function Ingresar() {
-  const { iniciarSesion } = useApp();
+  const { iniciarSesion } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const volverA = searchParams.get('volver') || '/';
+  const sesionExpiro = searchParams.get('expiro') === '1';
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [enviando, setEnviando] = useState(false);
+  const [aviso, setAviso] = useState(sesionExpiro ? 'Tu sesion expiro, por favor ingresa de nuevo.' : '');
 
-  const handleSubmit = (e) => {
+  // Limpiar el aviso de "sesion expiro" cuando el usuario empieza a tipear
+  useEffect(() => {
+    if (aviso && (email || password)) setAviso('');
+  }, [email, password, aviso]);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const resultado = iniciarSesion(email);
-    if (resultado.ok) {
+    setError('');
+    setEnviando(true);
+
+    try {
+      const usuario = await iniciarSesion(email, password);
       // Si es admin, lo mandamos al panel; sino respetamos volverA
-      if (resultado.usuario.rol === 'administrador') navigate('/admin');
-      else navigate(volverA);
-    } else {
-      setError(resultado.error);
+      if (usuario.tipo === 'administrador') {
+        navigate('/admin');
+      } else {
+        navigate(volverA);
+      }
+    } catch (err) {
+      const e = extraerError(err);
+      setError(e.mensaje);
+    } finally {
+      setEnviando(false);
     }
   };
 
@@ -33,6 +51,13 @@ export default function Ingresar() {
         </h1>
         <p className="text-piedra-700 text-sm">Ingresá para gestionar tus reservas</p>
       </div>
+
+      {aviso && (
+        <div className="mb-4 p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-sm flex items-start gap-2">
+          <Clock size={16} className="mt-0.5 flex-shrink-0" />
+          <span>{aviso}</span>
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="tarjeta space-y-5">
         <div>
@@ -46,6 +71,8 @@ export default function Ingresar() {
               onChange={(e) => setEmail(e.target.value)}
               placeholder="tu@email.com"
               className="input-natural pl-10"
+              autoComplete="email"
+              disabled={enviando}
             />
           </div>
         </div>
@@ -61,34 +88,29 @@ export default function Ingresar() {
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
               className="input-natural pl-10"
+              autoComplete="current-password"
+              disabled={enviando}
             />
           </div>
         </div>
 
         {error && (
-          <div className="text-sm text-red-700 bg-red-50 p-3 rounded-xl">
-            {error}. Probá con uno de los usuarios de demostración.
+          <div className="text-sm text-red-700 bg-red-50 p-3 rounded-xl flex items-start gap-2">
+            <AlertCircle size={16} className="mt-0.5 flex-shrink-0" />
+            <span>{error}</span>
           </div>
         )}
 
-        <button type="submit" className="btn-principal w-full">
-          Ingresar <ArrowRight size={18} />
+        <button type="submit" className="btn-principal w-full" disabled={enviando}>
+          {enviando ? 'Ingresando...' : (
+            <>Ingresar <ArrowRight size={18} /></>
+          )}
         </button>
 
         <div className="text-center text-sm text-piedra-700">
           ¿No tenés cuenta? <Link to="/registrarse" className="text-musgo-700 font-medium hover:underline">Registrate</Link>
         </div>
       </form>
-
-      {/* Tip de demo: usuarios de prueba */}
-      <div className="mt-6 p-4 rounded-2xl bg-crema-200/50 border border-crema-200 text-xs text-piedra-700">
-        <div className="font-medium text-piedra-900 mb-2">👋 Esta es una demo. Probá con:</div>
-        <ul className="space-y-1 font-mono">
-          <li>📧 <button onClick={() => setEmail('maria@ejemplo.com')} className="underline hover:text-musgo-700">maria@ejemplo.com</button> · cliente</li>
-          <li>📧 <button onClick={() => setEmail('admin@brisas.com.ar')} className="underline hover:text-musgo-700">admin@brisas.com.ar</button> · administrador</li>
-        </ul>
-        <div className="mt-2 italic">La contraseña no se valida en esta demo (cualquier texto funciona).</div>
-      </div>
     </div>
   );
 }

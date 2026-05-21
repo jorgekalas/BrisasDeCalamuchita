@@ -1,5 +1,5 @@
 import { Link, NavLink, useNavigate } from 'react-router-dom';
-import { useApp } from '../ContextoApp';
+import { useAuth } from '../contexto/ContextoAuth';
 import { LogOut, User } from 'lucide-react';
 
 /**
@@ -7,7 +7,7 @@ import { LogOut, User } from 'lucide-react';
  * Muestra logo, navegación principal y estado de sesión.
  */
 export default function Header() {
-  const { usuario, cerrarSesion } = useApp();
+  const { usuario, cerrarSesion, esCliente, esAdmin } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -45,14 +45,14 @@ export default function Header() {
           }>
             Disponibilidad
           </NavLink>
-          {usuario?.rol === 'cliente' && (
+          {esCliente && (
             <NavLink to="/mis-reservas" className={({ isActive }) =>
               `text-sm transition-colors ${isActive ? 'text-musgo-700 font-medium' : 'text-piedra-700 hover:text-musgo-700'}`
             }>
               Mis reservas
             </NavLink>
           )}
-          {usuario?.rol === 'administrador' && (
+          {esAdmin && (
             <NavLink to="/admin" className={({ isActive }) =>
               `text-sm transition-colors ${isActive ? 'text-musgo-700 font-medium' : 'text-piedra-700 hover:text-musgo-700'}`
             }>
@@ -69,7 +69,7 @@ export default function Header() {
                 <div className="w-8 h-8 rounded-full bg-musgo-100 text-musgo-700 flex items-center justify-center">
                   <User size={16} />
                 </div>
-                <span className="font-medium">{usuario.nombre.split(' ')[0]}</span>
+                <span className="font-medium">{usuario.nombre}</span>
               </div>
               <button
                 onClick={handleLogout}

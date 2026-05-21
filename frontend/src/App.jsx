@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { ProveedorApp } from './ContextoApp';
+import { ProveedorAuth } from './contexto/ContextoAuth';
 import Layout from './componentes/Layout';
+import RutaProtegida from './componentes/RutaProtegida';
 import Landing from './paginas/Landing';
 import Disponibilidad from './paginas/Disponibilidad';
 import Ingresar from './paginas/Ingresar';
@@ -12,21 +13,34 @@ import PanelAdmin from './paginas/PanelAdmin';
 
 export default function App() {
   return (
-    <ProveedorApp>
+    <ProveedorAuth>
       <BrowserRouter>
         <Routes>
           <Route element={<Layout />}>
+            {/* Rutas publicas */}
             <Route path="/" element={<Landing />} />
             <Route path="/disponibilidad" element={<Disponibilidad />} />
             <Route path="/ingresar" element={<Ingresar />} />
             <Route path="/registrarse" element={<Registrarse />} />
-            <Route path="/reservar" element={<Reservar />} />
-            <Route path="/reserva-enviada/:id" element={<ReservaEnviada />} />
-            <Route path="/mis-reservas" element={<MisReservas />} />
-            <Route path="/admin" element={<PanelAdmin />} />
+
+            {/* Rutas autenticadas (cualquier usuario logueado) */}
+            <Route path="/reservar" element={
+              <RutaProtegida rol="cliente"><Reservar /></RutaProtegida>
+            } />
+            <Route path="/reserva-enviada/:id" element={
+              <RutaProtegida><ReservaEnviada /></RutaProtegida>
+            } />
+            <Route path="/mis-reservas" element={
+              <RutaProtegida rol="cliente"><MisReservas /></RutaProtegida>
+            } />
+
+            {/* Rutas solo admin */}
+            <Route path="/admin" element={
+              <RutaProtegida rol="administrador"><PanelAdmin /></RutaProtegida>
+            } />
           </Route>
         </Routes>
       </BrowserRouter>
-    </ProveedorApp>
+    </ProveedorAuth>
   );
 }

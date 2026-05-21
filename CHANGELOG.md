@@ -4,6 +4,94 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 
 ## [No publicado]
 
+### Bloque 10 — Frontend autenticado completo ✅
+- **3 páginas autenticadas conectadas al backend**:
+    - **Reservar.jsx** (`POST /api/reservas`):
+        - Form con cantidad de huéspedes (validada contra capacidad real de la propiedad)
+        - Vehículo opcional con patente y modelo (transacción atómica en el backend)
+        - Teléfono y observaciones libres del cliente
+        - Manejo distintivo de errores: 409 CONFLICTO (fechas ocupadas, con CTA "Elegir otras fechas"), 422 REGLA_NEGOCIO, 400 VALIDACION_FALLIDA
+        - Después de crear, pasa la reserva via `navigate(state)` a la siguiente pantalla
+    - **ReservaEnviada.jsx** (`GET /api/reservas/:id` como fallback):
+        - Recibe la reserva creada por navigate state (no hay request al backend)
+        - Si el usuario refresca la pantalla, cae al fallback `GET /api/reservas/:id`
+        - Muestra confirmación con id, fechas, huéspedes, vehículo y aviso de email
+    - **MisReservas.jsx** (`GET /api/mis-reservas`):
+        - Listado paginado de las reservas del cliente
+        - Cancelación con `POST /:id/cancelar` (manejo de error si está fuera de ventana de 24hs)
+        - Estados visuales con badges de color
+        - Botón refresh para recargar
+    - **PanelAdmin.jsx** (`GET /api/reservas` + máquina de estados completa):
+        - Filtros server-side por estado (`?estado=Pendiente|Confirmada|...`)
+        - Paginación server-side con metadata real (`pagina`, `totalPaginas`)
+        - KPIs derivados de la página actual
+        - Calendario lateral con disponibilidad real (`GET /api/reservas/disponibilidad`)
+        - Acciones de máquina de estados según el estado actual:
+            - Pendiente: Confirmar / Rechazar
+            - Confirmada: Check-in / Cancelar
+            - En curso: Check-out
+            - Finalizada/Cancelada/No Show: sin acciones (cerrada)
+        - Link WhatsApp directo al cliente con mensaje pre-armado
+        - Error inline por reserva si una acción falla
+- **Componente RutaProtegida** (`src/componentes/RutaProtegida.jsx`):
+    - HOC que valida autenticación antes de mostrar el contenido
+    - Soporta restricción por rol (`cliente` o `administrador`)
+    - Si no hay sesión, redirige a `/ingresar?volver=<ruta>` para volver después
+    - Si hay sesión pero rol incorrecto, muestra "Acceso denegado"
+    - Mientras se rehidrata la sesión, muestra placeholder "Verificando sesión..."
+- **Limpieza completa**:
+    - Eliminado `src/ContextoApp.jsx` (contexto en memoria con mock)
+    - Eliminado `src/datos/mock.js` (datos simulados)
+    - Eliminado `src/componentes/ModalIngresos.jsx` (gráfico que dependía del mock)
+    - Nuevo `src/datos/constantes.js` con ESTADOS, ESTILOS_ESTADO y `estadoEfectivo()` (los únicos exports del mock que valían la pena)
+    - Footer con datos de contacto reales hardcodeados (WhatsApp +54 9 3546 52-8237)
+    - Calendario simplificado: ya no depende del contexto, solo recibe `fechasOcupadas` por prop
+- **Constantes compartidas** (`src/datos/constantes.js`):
+    - `ESTADOS`: espejo del ENUM de MySQL para uso en JSX
+    - `ESTILOS_ESTADO`: clases Tailwind por estado para badges consistentes
+    - `estadoEfectivo(reserva)`: calcula el estado "real" considerando la fecha actual
+- **Rutas protegidas en `App.jsx`**:
+    - `/reservar`, `/mis-reservas` → solo cliente
+    - `/admin` → solo administrador
+    - `/reserva-enviada/:id` → cualquier usuario logueado
+- **Validación**:
+    - **Build de producción exitoso**: 2013 módulos, bundle final 404 KB (más liviano que el B9)
+    - **25 tests E2E** del flujo completo: registro → reserva → estados → cancelación, con server mock simulando el backend
+    - **0 errores de sintaxis**, **0 referencias a archivos eliminados**
+
+### Bloque 9 — Frontend: plomería + 4 páginas públicas conectadas ✅
+- **Capa de API centralizada con axios** (`src/api/`):
+    - `cliente.js`: instancia única con baseURL, timeout, e interceptores
+        - REQUEST: inyecta automáticamente el token JWT desde localStorage
+        - RESPONSE: detecta 401 globalmente, limpia localStorage y redirige a `/ingresar?expiro=1` (excepto en login/registro)
+    - `auth.js`: `registrar()`, `login()`, `obtenerYo()`
+    - `propiedad.js`: `listarPropiedades()`, `obtenerPropiedad(id)`
+    - `disponibilidad.js`: `obtenerDisponibilidad({ desde, hasta })`
+    - `reservas.js`: 8 funciones para crear/listar/cambiar estado (se usan en B10)
+    - Helper `extraerError(err)` que normaliza cualquier error a `{ codigo, mensaje, detalles, status }`
+- **Contexto de autenticación nuevo** (`src/contexto/ContextoAuth.jsx`):
+    - Estado: `usuario`, `cargando`, `estaAutenticado`, `esAdmin`, `esCliente`
+    - Funciones: `iniciarSesion()`, `registrar()`, `cerrarSesion()`
+    - Persistencia en localStorage con claves `brisas:token` y `brisas:usuario`
+    - Rehidratación al montar: verifica el token contra el backend con `GET /api/auth/yo` (si falla, limpia)
+- **Hook `useApi`** (`src/ganchos/useApi.js`): wrapper genérico para llamadas async que expone `{ datos, cargando, error, recargar }`
+- **Vite con proxy** (`vite.config.js`): cualquier request a `/api/*` se proxea al backend en `http://127.0.0.1:3000` (configurable vía `VITE_API_TARGET`). Si el backend está caído, devuelve 503 con formato uniforme.
+- **`.env.ejemplo` del frontend** con `VITE_API_TARGET` (dev) y `VITE_API_URL` (producción)
+- **axios agregado a package.json** (versión 1.7.9)
+- **4 páginas públicas conectadas al backend**:
+    - **Landing**: usa `GET /api/propiedad` para precio, capacidad, descripción. Mantiene los defaults visuales (fotos, iconos de amenities, iframe de Google Maps) del mock mediante helper `enriquecerPropiedad()`.
+    - **Disponibilidad**: usa `GET /api/reservas/disponibilidad` para pintar fechas ocupadas en el calendario. Adaptador `expandirRangosAFechas()` convierte rangos del backend a fechas individuales del calendario.
+    - **Ingresar**: usa `POST /api/auth/login` con manejo de error. Muestra aviso "Tu sesión expiró" cuando viene `?expiro=1`. Botones demo de María y Jorge para coloquio.
+    - **Registrarse**: usa `POST /api/auth/registro`. Muestra errores Zod por campo cuando el backend devuelve `detalles`. Auto-login después del registro.
+- **Componentes adaptados**:
+    - `Header.jsx`: usa `useAuth()` en vez de `useApp()`. Helpers `esCliente`/`esAdmin` en vez de `usuario.rol`.
+    - `Calendario.jsx`: acepta `fechasOcupadas` como prop (fallback al contexto para retrocompatibilidad con páginas del B10).
+- **`ContextoApp.jsx` se mantiene** por retrocompatibilidad con las 3 páginas autenticadas (Reservar, MisReservas, PanelAdmin) que aún no migramos. Se reemplaza en el Bloque 10.
+- **Validación**:
+    - **Build de producción exitoso**: Vite transformó 2013 módulos sin errores
+    - **20 tests E2E** del flujo de auth: login OK/falla, token persistido, token vencido → redirect, registro OK/duplicado
+    - **0 lint errors**, **0 warnings**
+
 ### Bloque 8 — Notificaciones por email asíncronas ✅
 - **Patrón Outbox + cron worker** para envío asincrónico de emails:
     - Cada cambio de estado relevante en una reserva inserta una fila en

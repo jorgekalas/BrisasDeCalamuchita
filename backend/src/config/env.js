@@ -64,11 +64,24 @@ if (!resultado.success) {
   console.error('\n❌ Error en las variables de entorno:');
   console.error('   Revisa tu archivo .env contra .env.ejemplo\n');
 
+  const detalles = [];
   for (const error of resultado.error.errors) {
     const ruta = error.path.join('.');
-    console.error(`   • ${ruta}: ${error.message}`);
+    const valorActual = process.env[ruta];
+    const valorTexto = valorActual === undefined
+      ? '(no definida)'
+      : `"${valorActual}"`;
+    const linea = `   • ${ruta} = ${valorTexto}: ${error.message}`;
+    console.error(linea);
+    detalles.push(linea);
   }
   console.error('');
+
+  // En tests: tirar error para que jest capture el detalle.
+  // En desarrollo/produccion: process.exit para fallar rapido y claro.
+  if (process.env.NODE_ENV === 'pruebas') {
+    throw new Error('Variables de entorno invalidas:\n' + detalles.join('\n'));
+  }
   process.exit(1);
 }
 

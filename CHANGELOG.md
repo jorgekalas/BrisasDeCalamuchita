@@ -4,6 +4,45 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 
 ## [No publicado]
 
+### Bloque 11 — Pruebas automatizadas y CI ✅
+- **Backend (Jest + Supertest)**:
+    - **64 tests unitarios** (`tests/unitarios/`):
+        - `paginacion.test.js` (11): obtenerPaginacion, construirMetadata, validaciones de límites
+        - `plantillasEmail.test.js` (43): cada plantilla genera asunto + cuerpo HTML correctos con UTF-8, nombre del cliente, ID, contacto WhatsApp
+        - `propiedadServicio.test.js` (10): mocks del modelo, validación de capacidad min<=max
+    - **~30 tests E2E** (`tests/e2e/`) que corren contra **MySQL real**:
+        - `auth.test.js`: registro, login, /yo, tokens inválidos
+        - `reservas.test.js`: máquina de estados completa (crear → confirmar → check-in → check-out), autorización por rol, anti-solapamiento (409), validaciones
+        - `propiedad.test.js`: endpoints públicos, edición solo admin
+    - **Helpers reutilizables** (`tests/helpers/`):
+        - `setup-env.js`: variables de entorno de testing
+        - `bd.js`: resetear BD, limpiar reservas nuevas, cerrar pool
+        - `auth.js`: `loginAdmin()`, `loginMaria()`, `loginPedro()`
+    - **BD de pruebas separada** (`brisas_test`): se crea/dropa entre suites para garantizar estado consistente
+    - Scripts: `npm test`, `npm run test:unit`, `npm run test:e2e`, `npm run test:coverage`
+- **Frontend (Vitest + React Testing Library + MSW)**:
+    - **48 tests** que cubren:
+        - `formato.test.js` (20): helpers de fecha/precio/teléfono con ambos formatos (ISO completo y corto)
+        - `cliente.test.js` (9): interceptores axios, limpieza de localStorage en 401, excepción de /login, normalización de errores
+        - `ContextoAuth.test.jsx` (7): login OK/falla, rehidratación desde localStorage, esAdmin/esCliente, logout, registro
+        - `RutaProtegida.test.jsx` (4): sin sesión redirige, rol incorrecto muestra "Acceso denegado", rol correcto renderiza
+        - `useApi.test.js` (4): estado inicial, datos exitosos, errores normalizados, recargar
+        - `adaptadorDisponibilidad.test.js` (4): expansión de rangos a fechas individuales
+    - **MSW (Mock Service Worker)** simula el backend completo en `src/pruebas/mockHttp.js`. Los componentes hacen llamadas HTTP normales, MSW las intercepta y responde con datos controlados. Permite simular escenarios específicos por test (ej. 401, 409).
+    - **Cobertura: 78.44%** sobre los módulos críticos (cliente axios, contextos, hooks, helpers, HOCs). Las páginas y componentes de UI grandes están excluidos del threshold porque se validan con tests E2E + revisión manual del docente.
+    - Scripts: `npm test`, `npm run test:watch`, `npm run test:coverage`, `npm run test:ui`
+- **CI con GitHub Actions** (`.github/workflows/ci.yml`):
+    - En cada push y PR a `main`
+    - **Job 1 (backend)**: levanta MySQL 8 como service container, instala deps, corre tests unitarios y E2E, genera reporte de cobertura
+    - **Job 2 (frontend)**: instala deps, corre tests con cobertura, build de producción
+    - Reportes de cobertura subidos como artifacts
+    - Falla el workflow si la cobertura no llega al 70% (umbral configurado en `jest.config.js` y `vitest.config.js`)
+- **Validación local** (todo corrido en sandbox antes de empaquetar):
+    - 64/64 tests unitarios del backend pasan
+    - 48/48 tests del frontend pasan
+    - Build de producción del frontend exitoso
+    - Threshold de cobertura del frontend superado (78.44% global)
+
 ### Bloque 10 — Frontend autenticado completo ✅
 - **3 páginas autenticadas conectadas al backend**:
     - **Reservar.jsx** (`POST /api/reservas`):

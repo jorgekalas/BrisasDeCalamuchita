@@ -73,12 +73,15 @@ export default function Reservar() {
 
     try {
       // Armar el payload para el backend. El telefono de contacto va
-      // adentro de las observaciones para que el admin lo vea.
+      // adentro de las observaciones para que el admin lo vea, junto
+      // con un encabezado claro para las observaciones libres del huesped.
       const obsConTelefono = [
         form.telefonoContacto
           ? `Telefono de contacto: ${form.telefonoContacto}`
           : null,
-        form.observaciones,
+        form.observaciones
+          ? `Observaciones del huesped: ${form.observaciones}`
+          : null,
       ].filter(Boolean).join('\n\n');
 
       const payload = {

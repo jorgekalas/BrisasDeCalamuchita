@@ -1,0 +1,142 @@
+name: CI
+
+# =============================================================
+#   Integracion Continua de Brisas de Calamuchita
+# =============================================================
+#   En cada push y PR:
+#   - Levanta MySQL 8 en un service container
+#   - Corre tests del backend (unit + e2e contra MySQL real)
+#   - Corre tests del frontend (Vitest + RTL + MSW)
+#   - Genera reportes de cobertura
+#
+#   Threshold: ambos deben pasar >= 70% de cobertura.
+# =============================================================
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+
+  # =============================================================
+  #   BACKEND — tests Jest + Supertest contra MySQL real
+  # =============================================================
+  backend:
+    name: Backend - Tests + Coverage
+    runs-on: ubuntu-latest
+
+    # MySQL 8 como service container
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: root_password
+          MYSQL_DATABASE: brisas_test
+          MYSQL_USER: brisas_user
+          MYSQL_PASSWORD: brisas_password_local
+        ports:
+          - 3307:3306
+        options: >-
+          --health-cmd "mysqladmin ping -h localhost"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Instalar dependencias
+        working-directory: backend
+        run: npm install --no-audit --no-fund
+
+      - name: Esperar a MySQL listo
+        run: |
+          for i in {1..30}; do
+            if mysqladmin ping -h 127.0.0.1 -P 3307 -ubrisas_user -pbrisas_password_local --silent; then
+              echo "MySQL ready"
+              exit 0
+            fi
+            echo "Esperando MySQL... ($i)"
+            sleep 2
+          done
+          echo "MySQL no se levanto a tiempo"
+          exit 1
+
+      - name: Tests unitarios
+        working-directory: backend
+        run: npm run test:unit
+
+      - name: Tests E2E (con MySQL real)
+        working-directory: backend
+        env:
+          NODE_ENV: pruebas
+          BD_HOST: 127.0.0.1
+          BD_PUERTO: 3307
+          BD_USUARIO: brisas_user
+          BD_PASSWORD: brisas_password_local
+          BD_NOMBRE: brisas_test
+          JWT_SECRETO: ci-secret-suficientemente-largo-para-zod-32-caracteres-minimo
+          JWT_EXPIRACION: 24h
+          EMAIL_MODO: simulado
+          PUERTO: '3000'
+          URL_FRONTEND: http://localhost:5173
+        run: npm run test:e2e
+
+      - name: Cobertura total
+        working-directory: backend
+        run: npm run test:coverage
+
+      - name: Subir reporte de cobertura
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cobertura-backend
+          path: backend/cobertura/
+
+
+  # =============================================================
+  #   FRONTEND — tests Vitest + RTL + MSW
+  # =============================================================
+  frontend:
+    name: Frontend - Tests + Coverage
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Instalar dependencias
+        working-directory: frontend
+        run: npm install --no-audit --no-fund
+
+      - name: Tests con cobertura
+        working-directory: frontend
+        run: npm run test:coverage
+
+      - name: Build de produccion
+        working-directory: frontend
+        run: npm run build
+
+      - name: Subir reporte de cobertura
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cobertura-frontend
+          path: frontend/cobertura/

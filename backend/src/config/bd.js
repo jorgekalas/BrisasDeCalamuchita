@@ -17,7 +17,7 @@
 // =============================================================
 
 import mysql from 'mysql2/promise';
-import { env } from './env.js';
+import { env, esProduccion } from './env.js';
 
 
 // -------------------------------------------------------------
@@ -55,6 +55,16 @@ export const pool = mysql.createPool({
   // tiene esta config por flags, pero la repetimos del lado del
   // cliente por las dudas.
   timezone: '-03:00',
+
+  // --- SSL/TLS para produccion ---
+  // En produccion conectamos a TiDB Cloud Serverless, que EXIGE
+  // TLS. Node.js usa el bundle de CAs de Mozilla por defecto, asi
+  // que no hace falta especificar el certificado.
+  // En desarrollo (Docker local) no aplica SSL.
+  ssl: esProduccion ? {
+    minVersion: 'TLSv1.2',
+    rejectUnauthorized: true,
+  } : undefined,
 });
 
 

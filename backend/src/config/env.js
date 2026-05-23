@@ -21,6 +21,17 @@ dotenv.config();
 
 
 // -------------------------------------------------------------
+//   Compatibilidad con plataformas de deploy (Render, Heroku, etc.)
+// -------------------------------------------------------------
+//   Muchas plataformas asignan el puerto via la variable estandar
+//   PORT. Si esta seteada y nuestra PUERTO no, copiamos el valor.
+// -------------------------------------------------------------
+if (process.env.PORT && !process.env.PUERTO) {
+  process.env.PUERTO = process.env.PORT;
+}
+
+
+// -------------------------------------------------------------
 //   Schema de validacion
 // -------------------------------------------------------------
 // Define que variables son obligatorias, su tipo y valor por

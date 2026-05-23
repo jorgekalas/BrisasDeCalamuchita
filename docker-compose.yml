@@ -96,8 +96,9 @@ services:
       UPLOAD_LIMIT: 64M
 
     ports:
-      # phpMyAdmin queda en http://localhost:8080
-      - "8080:80"
+      # phpMyAdmin queda en http://localhost:8081
+      # (usamos 8081 porque 8080 suele estar ocupado por Jenkins u otros).
+      - "8081:80"
 
     depends_on:
       mysql:

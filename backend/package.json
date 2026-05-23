@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "dev": "node --watch src/servidor.js",
+    "start": "node src/servidor.js",
     "iniciar": "node src/servidor.js",
     "migrar": "node scripts/runner-sql.cjs migrar",
     "semillas": "node scripts/runner-sql.cjs semillas",

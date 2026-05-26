@@ -125,8 +125,10 @@ export default function Calendario({ modo = 'visualizar', onSeleccionRango, fech
 
           let clases = 'aspect-square flex items-center justify-center rounded-xl text-sm font-medium transition-all relative group ';
           if (dia.esPasada) {
-            // Fondo gris + cursor no-allowed para que se note que no es clickeable
-            clases += 'bg-piedra-200/40 text-piedra-400 cursor-not-allowed';
+            // Stone-400: gris pizarra fuerte. Es imposible confundirlo
+            // con un dia disponible (fondo blanco). Texto en stone-50
+            // para que el numero se lea claro sobre el gris.
+            clases += 'bg-stone-400 text-stone-50 cursor-not-allowed';
           } else if (dia.ocupada) {
             if (dia.ocupada.estado === ESTADOS.PENDIENTE) {
               clases += 'bg-amber-100 text-amber-800 cursor-not-allowed line-through';
@@ -156,7 +158,7 @@ export default function Calendario({ modo = 'visualizar', onSeleccionRango, fech
               {dia.esPasada && (
                 // Candado SVG inline que aparece al hover, indicando que no se puede clickear
                 <svg
-                  className="absolute opacity-0 group-hover:opacity-100 transition-opacity text-piedra-500"
+                  className="absolute opacity-0 group-hover:opacity-100 transition-opacity text-stone-50"
                   xmlns="http://www.w3.org/2000/svg"
                   width="14" height="14" viewBox="0 0 24 24"
                   fill="none" stroke="currentColor" strokeWidth="2.5"
@@ -187,7 +189,7 @@ export default function Calendario({ modo = 'visualizar', onSeleccionRango, fech
           <span>Reservada</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded bg-piedra-200/40 border border-piedra-200" />
+          <div className="w-4 h-4 rounded bg-stone-400" />
           <span>Pasada</span>
         </div>
       </div>

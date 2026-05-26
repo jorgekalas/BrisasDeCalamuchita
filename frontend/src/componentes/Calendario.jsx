@@ -123,9 +123,10 @@ export default function Calendario({ modo = 'visualizar', onSeleccionRango, fech
           if (!dia) return <div key={i} />;
           const enSel = estaEnSeleccion(dia.iso);
 
-          let clases = 'aspect-square flex items-center justify-center rounded-xl text-sm font-medium transition-all relative ';
+          let clases = 'aspect-square flex items-center justify-center rounded-xl text-sm font-medium transition-all relative group ';
           if (dia.esPasada) {
-            clases += 'text-piedra-400 cursor-not-allowed';
+            // Fondo gris + cursor no-allowed para que se note que no es clickeable
+            clases += 'bg-piedra-200/40 text-piedra-400 cursor-not-allowed';
           } else if (dia.ocupada) {
             if (dia.ocupada.estado === ESTADOS.PENDIENTE) {
               clases += 'bg-amber-100 text-amber-800 cursor-not-allowed line-through';
@@ -147,8 +148,25 @@ export default function Calendario({ modo = 'visualizar', onSeleccionRango, fech
               className={clases}
               disabled={!dia || dia.esPasada || dia.ocupada || modo !== 'seleccionar'}
               type="button"
+              title={dia.esPasada ? 'Fecha anterior, no disponible' : undefined}
             >
-              {dia.dia}
+              <span className={dia.esPasada ? 'group-hover:opacity-0 transition-opacity' : ''}>
+                {dia.dia}
+              </span>
+              {dia.esPasada && (
+                // Candado SVG inline que aparece al hover, indicando que no se puede clickear
+                <svg
+                  className="absolute opacity-0 group-hover:opacity-100 transition-opacity text-piedra-500"
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="14" height="14" viewBox="0 0 24 24"
+                  fill="none" stroke="currentColor" strokeWidth="2.5"
+                  strokeLinecap="round" strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                </svg>
+              )}
             </button>
           );
         })}
@@ -167,6 +185,10 @@ export default function Calendario({ modo = 'visualizar', onSeleccionRango, fech
         <div className="flex items-center gap-2">
           <div className="w-4 h-4 rounded bg-red-50 border border-red-200" />
           <span>Reservada</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-4 h-4 rounded bg-piedra-200/40 border border-piedra-200" />
+          <span>Pasada</span>
         </div>
       </div>
     </div>

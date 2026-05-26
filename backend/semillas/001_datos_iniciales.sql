@@ -39,7 +39,7 @@ INSERT INTO propiedad (
 
 -- Administrador
 INSERT INTO usuario (id, email, password_hash, nombre, apellido, telefono, tipo) VALUES
-  (1, 'admin@brisas.com.ar',
+  (1, ' brisasdecalamuchita@gmail.com',
    '$2b$10$DOugbEVcmuvRnZq3lYrP8OGtQydm88V8396Wz4F3hRsBOE6BtJuIK',
    'Jorge', 'Kalas', '+54 9 11 5555 0000', 'administrador');
 

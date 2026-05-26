@@ -1,4 +1,4 @@
-import { MapPin, Phone, Instagram } from 'lucide-react';
+import { MapPin, Phone, Instagram, Mail } from 'lucide-react';
 
 // Datos de contacto fijos del footer.
 // No vienen del backend porque son metadatos del negocio
@@ -7,6 +7,7 @@ const DIRECCION = 'Malvinas Argentinas 189, X5196 Santa Rosa de Calamuchita, Có
 const URL_MAPA = 'https://www.google.com/maps/place/Malvinas+Argentinas+189,+X5196+Santa+Rosa+de+Calamuchita,+C%C3%B3rdoba';
 const TELEFONO_DISPLAY = '+54 9 3546 52-8237';
 const TELEFONO_WA = 'https://wa.me/5493546528237';
+const EMAIL = 'brisasdecalamuchita@gmail.com';
 
 export default function Footer() {
   return (
@@ -45,6 +46,14 @@ export default function Footer() {
                 className="flex items-center gap-2 hover:text-musgo-700 transition-colors"
               >
                 <Phone size={14} className="text-musgo-600" /> {TELEFONO_DISPLAY}
+              </a>
+            </li>
+            <li>
+              <a
+                href={`mailto:${EMAIL}`}
+                className="flex items-center gap-2 hover:text-musgo-700 transition-colors"
+              >
+                <Mail size={14} className="text-musgo-600" /> {EMAIL}
               </a>
             </li>
             <li className="flex items-center gap-2">

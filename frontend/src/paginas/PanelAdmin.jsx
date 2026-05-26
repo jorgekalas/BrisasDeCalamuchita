@@ -59,7 +59,10 @@ export default function PanelAdmin() {
   const meta = respuesta?.metadata?.paginacion;
 
   // --- Disponibilidad para el calendario lateral ---
-  const { datos: rangosOcupados } = useApi(
+  const {
+    datos: rangosOcupados,
+    recargar: recargarDisponibilidad,
+  } = useApi(
     () => apiDisponibilidad.obtenerDisponibilidad(),
     []
   );
@@ -101,7 +104,11 @@ export default function PanelAdmin() {
 
     try {
       await fnApi(reservaId);
+      // Refrescar tanto el listado como el calendario lateral:
+      // cualquier accion puede afectar la disponibilidad
+      // (confirmar pinta una fecha de rojo, cancelar la libera, etc.)
       recargar();
+      recargarDisponibilidad();
     } catch (err) {
       const e = extraerError(err);
       setErrorAccion({ reservaId, mensaje: e.mensaje });

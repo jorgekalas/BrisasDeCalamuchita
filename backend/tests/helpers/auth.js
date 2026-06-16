@@ -7,7 +7,7 @@
 //   Las seeds incluyen:
 //     - admin@brisas.com.ar / demo1234 (administrador)
 //     - maria@ejemplo.com / demo1234 (cliente id=2)
-//     - pedro@ejemplo.com / demo1234 (cliente id=3)
+//     - mperez@ejemplo.com / demo1234 (cliente id=3)
 //     - etc.
 // =============================================================
 
@@ -27,6 +27,8 @@ export async function login(app, email, password = 'demo1234') {
   }
   return res.body.datos;
 }
+
+
 // -------------------------------------------------------------
 //   Loggear como admin (atajo)
 // -------------------------------------------------------------

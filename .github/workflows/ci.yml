@@ -5,6 +5,7 @@ name: CI
 # =============================================================
 #   En cada push y PR:
 #   - Levanta MySQL 8 en un service container
+#   - Carga schema + semillas en la base de pruebas
 #   - Corre tests del backend (unit + e2e contra MySQL real)
 #   - Corre tests del frontend (Vitest + RTL + MSW)
 #   - Genera reportes de cobertura
@@ -72,6 +73,24 @@ jobs:
           echo "MySQL no se levanto a tiempo"
           exit 1
 
+      - name: Cargar schema y semillas en brisas_test
+        working-directory: backend
+        env:
+          NODE_ENV: pruebas
+          BD_HOST: 127.0.0.1
+          BD_PUERTO: 3307
+          BD_USUARIO: brisas_user
+          BD_PASSWORD: brisas_password_local
+          BD_NOMBRE: brisas_test
+          JWT_SECRETO: ci-secret-suficientemente-largo-para-zod-32-caracteres-minimo
+          JWT_EXPIRACION: 24h
+          EMAIL_MODO: simulado
+          PUERTO: '3000'
+          URL_FRONTEND: http://localhost:5173
+        run: |
+          npm run migrar
+          npm run semillas
+
       - name: Tests unitarios
         working-directory: backend
         run: npm run test:unit
@@ -94,6 +113,18 @@ jobs:
 
       - name: Cobertura total
         working-directory: backend
+        env:
+          NODE_ENV: pruebas
+          BD_HOST: 127.0.0.1
+          BD_PUERTO: 3307
+          BD_USUARIO: brisas_user
+          BD_PASSWORD: brisas_password_local
+          BD_NOMBRE: brisas_test
+          JWT_SECRETO: ci-secret-suficientemente-largo-para-zod-32-caracteres-minimo
+          JWT_EXPIRACION: 24h
+          EMAIL_MODO: simulado
+          PUERTO: '3000'
+          URL_FRONTEND: http://localhost:5173
         run: npm run test:coverage
 
       - name: Subir reporte de cobertura

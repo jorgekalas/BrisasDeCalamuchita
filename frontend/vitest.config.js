@@ -2,7 +2,7 @@
 //   CONFIG DE VITEST
 // =============================================================
 //   Tests del frontend con jsdom + RTL + MSW.
-//   Aplicar threshold de cobertura 70% global.
+//   Aplicar threshold de cobertura 70% global
 // =============================================================
 
 import { defineConfig } from 'vitest/config';

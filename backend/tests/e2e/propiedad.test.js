@@ -6,7 +6,7 @@ import { jest } from '@jest/globals';
 import request from 'supertest';
 
 import { app } from '../../src/app.js';
-import { resetearBD, cerrarPoolApp } from '../helpers/bd.js';
+import { resetearBD } from '../helpers/bd.js';
 import { loginAdmin, loginMaria } from '../helpers/auth.js';
 
 
@@ -20,9 +20,7 @@ describe('Propiedad (E2E)', () => {
     tokenMaria = (await loginMaria(app)).token;
   });
 
-  afterAll(async () => {
-    await cerrarPoolApp();
-  });
+
 
 
   describe('GET /api/propiedad', () => {

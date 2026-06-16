@@ -10,7 +10,7 @@ import request from 'supertest';
 
 // Importamos despues de que setup-env.js corra
 import { app } from '../../src/app.js';
-import { resetearBD, cerrarPoolApp } from '../helpers/bd.js';
+import { resetearBD } from '../helpers/bd.js';
 
 
 describe('Autenticacion (E2E)', () => {
@@ -20,10 +20,7 @@ describe('Autenticacion (E2E)', () => {
     await resetearBD();
   });
 
-  // Al final: cerrar pool
-  afterAll(async () => {
-    await cerrarPoolApp();
-  });
+
 
 
   // ========== REGISTRO ==========

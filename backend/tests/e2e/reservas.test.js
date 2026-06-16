@@ -12,7 +12,7 @@ import { jest } from '@jest/globals';
 import request from 'supertest';
 
 import { app } from '../../src/app.js';
-import { resetearBD, cerrarPoolApp } from '../helpers/bd.js';
+import { resetearBD } from '../helpers/bd.js';
 import { loginAdmin, loginMaria, loginPedro } from '../helpers/auth.js';
 
 
@@ -28,9 +28,6 @@ describe('Reservas (E2E)', () => {
     tokenPedro = (await loginPedro(app)).token;
   });
 
-  afterAll(async () => {
-    await cerrarPoolApp();
-  });
 
 
   // =============================================================

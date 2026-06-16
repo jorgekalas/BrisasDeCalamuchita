@@ -137,9 +137,9 @@ Detalles adicionales del entorno Docker en [docker/README.md](./docker/README.md
 - [Diccionario de datos](./docs/diagramas/diccionario-de-datos.md) — tablas, columnas, restricciones, índices
 - [Diagramas del sistema](./docs/diagramas/) — DER, clases, casos de uso, estados, secuencia
 - [Entorno Docker](./docker/README.md) — configuración del entorno de desarrollo local
-- Manual técnico — *en desarrollo*
-- Manual de usuario — *en desarrollo*
-- Documentación de la API (OpenAPI/Swagger) — *en desarrollo*
+- Manual técnico
+- Manual de usuario
+- Documentación de la API (OpenAPI/Swagger)
 
 ## Licencia
 

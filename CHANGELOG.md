@@ -4,7 +4,7 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 
 ## [No publicado]
 
-### Bloque 11 — Pruebas automatizadas y CI ✅
+### Bloque 11 — Pruebas automatizadas y CI 
 - **Backend (Jest + Supertest)**:
     - **64 tests unitarios** (`tests/unitarios/`):
         - `paginacion.test.js` (11): obtenerPaginacion, construirMetadata, validaciones de límites
@@ -43,7 +43,7 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
     - Build de producción del frontend exitoso
     - Threshold de cobertura del frontend superado (78.44% global)
 
-### Bloque 10 — Frontend autenticado completo ✅
+### Bloque 10 — Frontend autenticado completo 
 - **3 páginas autenticadas conectadas al backend**:
     - **Reservar.jsx** (`POST /api/reservas`):
         - Form con cantidad de huéspedes (validada contra capacidad real de la propiedad)
@@ -98,7 +98,7 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
     - **25 tests E2E** del flujo completo: registro → reserva → estados → cancelación, con server mock simulando el backend
     - **0 errores de sintaxis**, **0 referencias a archivos eliminados**
 
-### Bloque 9 — Frontend: plomería + 4 páginas públicas conectadas ✅
+### Bloque 9 — Frontend: plomería + 4 páginas públicas conectadas 
 - **Capa de API centralizada con axios** (`src/api/`):
     - `cliente.js`: instancia única con baseURL, timeout, e interceptores
         - REQUEST: inyecta automáticamente el token JWT desde localStorage
@@ -131,7 +131,7 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
     - **20 tests E2E** del flujo de auth: login OK/falla, token persistido, token vencido → redirect, registro OK/duplicado
     - **0 lint errors**, **0 warnings**
 
-### Bloque 8 — Notificaciones por email asíncronas ✅
+### Bloque 8 — Notificaciones por email asíncronas 
 - **Patrón Outbox + cron worker** para envío asincrónico de emails:
     - Cada cambio de estado relevante en una reserva inserta una fila en
       la tabla `notificacion` con `estado_envio = 'pendiente'`
@@ -186,7 +186,7 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 - Información actualizada al estado real del proyecto (incluyendo puertos
   reales como 3307 y 8081, no los defaults)
 
-### Bloque 7 — Lógica de reservas y máquina de estados ✅
+### Bloque 7 — Lógica de reservas y máquina de estados 
 - **5 endpoints nuevos** que implementan la máquina de estados:
     - `POST /api/reservas` — cliente crea reserva (Pendiente, bloqueo 2hs)
     - `POST /api/reservas/:id/confirmar` — admin: Pendiente → Confirmada
@@ -222,7 +222,7 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
     - Check-in/out: 9 casos (autorización, fecha en rango, transiciones inválidas)
     - Cron: 3 casos (detecta bloqueos vencidos, cancela correctamente)
 
-### Bloque 6 — Endpoints CRUD básicos ✅
+### Bloque 6 — Endpoints CRUD básicos 
 - **10 endpoints nuevos** organizados en 3 recursos:
     - **Propiedad** (`/api/propiedad`):
         - `GET /` y `GET /:id` — públicos, datos de la propiedad para la landing
@@ -247,7 +247,7 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 - **Validador unificado** (`src/validadores/recursosValidador.js`) con schemas Zod para los 3 recursos.
 - **Validado end-to-end** con 50 tests in-memory: cubren los 10 endpoints, todos los casos de autorización (sin token / cliente / admin), validación de inputs, paginación, filtros y anidación de relaciones.
 
-### Bloque 5 — Sistema de autenticación (JWT + bcrypt) ✅
+### Bloque 5 — Sistema de autenticación (JWT + bcrypt) 
 - **Modelo de usuario** (`src/modelos/usuarioModelo.js`):
     - `buscarPorEmail()` / `buscarPorId()` con JOIN a cliente y administrador
     - `existeEmail()` — query optimizada (solo trae el id) para validación rápida
@@ -281,7 +281,7 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
     registro exitoso/duplicado/inválido, login con todas las combinaciones,
     GET /yo sin token / con token falso / con token válido. Todo OK.
 
-### Bloque 4 — Setup del backend Express ✅
+### Bloque 4 — Setup del backend Express 
 - **Esqueleto del servidor** con arquitectura modular:
     - `src/servidor.js` — bootstrap HTTP, prueba de BD al arrancar (fail-fast)
       y graceful shutdown (SIGTERM/SIGINT con timeout de 10s).
@@ -320,7 +320,7 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
   (`NODE_ENV` con valores `desarrollo|pruebas|produccion`, `BD_PUERTO=3307`,
   `PUERTO=3000`).
 
-### Bloque 3 — Entorno local con Docker Compose ✅
+### Bloque 3 — Entorno local con Docker Compose 
 - `docker-compose.yml` en la raíz con dos servicios:
     - **MySQL 8.4**: base de datos del sistema, puerto 3306, volumen
       persistente `brisas_mysql_data`, healthcheck cada 10s.
@@ -350,7 +350,7 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
   es administrado por Docker (no cae en el repo) y excluyendo bind mounts custom
   por si alguien los usa.
 
-### Bloque 2 — Diseño completo de la base de datos MySQL ✅
+### Bloque 2 — Diseño completo de la base de datos MySQL 
 - Schema completo de la BD `brisas_de_calamuchita` con **8 tablas** en
   `backend/migraciones/001_schema.sql`:
     - `usuario` (base) + `cliente` + `administrador` (herencia con tablas separadas)
@@ -403,7 +403,7 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 - README del backend con explicación de la arquitectura por capas.
 - Documento base del sistema en `docs/manuales/01-documento-base.md`.
 
-### Sub-bloque 2A — Frontend de demo en React (✅ buildea sin errores)
+### Sub-bloque 2A — Frontend de demo en React (buildea sin errores)
 - Configuración base: Vite, Tailwind con paleta personalizada (musgo, terracota, crema, piedra),
   PostCSS, autoprefixer, fuentes Fraunces + Outfit.
 - Estilos globales con texturas (grano), animaciones de reveal escalonado, botones, badges,

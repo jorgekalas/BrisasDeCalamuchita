@@ -5,7 +5,7 @@ SPA en **React 18 + Vite + Tailwind CSS** con datos simulados, lista para la dem
 > En esta fase de demo el frontend funciona **sin backend**: usa datos mockeados en memoria (`src/datos/mock.js`).
 > En el Bloque 11 se conectará a la API real.
 
-## 🚀 Cómo levantarlo
+## Cómo levantarlo
 
 ```bash
 # Una sola vez: instalar dependencias
@@ -39,7 +39,7 @@ Se abre automáticamente en `http://localhost:5173`.
 
 > La contraseña es ignorada en esta demo (cualquier texto sirve).
 
-## 🎨 Sistema de diseño
+##  Sistema de diseño
 
 | Token | Valor | Uso |
 |---|---|---|
@@ -50,7 +50,7 @@ Se abre automáticamente en `http://localhost:5173`.
 | Fraunces | Serif (display) | Títulos |
 | Outfit | Sans (cuerpo) | Texto general |
 
-## 📁 Estructura
+##  Estructura
 
 ```
 frontend/
@@ -91,7 +91,7 @@ frontend/
 └── postcss.config.js
 ```
 
-## 📦 Build de producción
+## Build de producción
 
 ```bash
 npm run build       # Genera /dist

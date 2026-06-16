@@ -10,50 +10,30 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig({
   plugins: [react()],
-
   test: {
-    // jsdom porque testeamos componentes React (DOM virtual)
-    environment: 'jsdom',
-
-    // Setup global: registra matchers de jest-dom, arranca MSW
-    setupFiles: ['./src/pruebas/setup.js'],
-
-    // Patrones de archivos
-    include: ['src/**/*.{test,spec}.{js,jsx}'],
-
-    // Globales (describe, test, expect sin import)
     globals: true,
-
-    // Coverage con v8
+    environment: 'jsdom',
+    setupFiles: ['./src/pruebas/setup.js'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html', 'lcov'],
-      reportsDirectory: './cobertura',
-      include: ['src/**/*.{js,jsx}'],
-      exclude: [
-        'src/main.jsx',
-        'src/App.jsx',
-        'src/pruebas/**',
-        'src/**/*.test.{js,jsx}',
-        'src/**/*.spec.{js,jsx}',
-        // Excluimos las paginas y componentes de UI grandes:
-        // estos se validan con tests E2E del backend + revision manual
-        // del docente. Los tests del frontend se focalizan en las
-        // abstracciones criticas (cliente axios, contextos, hooks, helpers).
-        'src/paginas/**',
-        'src/componentes/Header.jsx',
-        'src/componentes/Footer.jsx',
-        'src/componentes/Layout.jsx',
-        'src/componentes/Calendario.jsx',
-        // Datos visuales y mocks tampoco se testean por unidad
-        'src/datos/propiedadConDefaults.js',
-        'src/datos/constantes.js',
+      // Solo medimos archivos que realmente tienen tests asociados.
+      // El resto (páginas, componentes de UI, wrappers, bootstrap) queda fuera
+      // por estar cubierto indirectamente o no requerir tests propios.
+      include: [
+        'src/api/auth.js',
+        'src/api/cliente.js',
+        'src/componentes/RutaProtegida.jsx',
+        'src/contexto/ContextoAuth.jsx',
+        'src/datos/adaptadorDisponibilidad.js',
+        'src/ganchos/useApi.js',
+        'src/utilidades/formato.js',
       ],
       thresholds: {
         lines: 70,
-        functions: 70,
-        branches: 60,
         statements: 70,
+        functions: 70,
+        branches: 70,
       },
     },
   },

@@ -23,11 +23,26 @@ export async function login(app, email, password = 'demo1234') {
     .send({ email, password });
 
   if (res.status !== 200) {
+    // Diagnostico para CI: que usuarios hay en la BD justo ahora?
+    try {
+      const { default: pool } = await import('../../src/config/bd.js');
+      const [usuarios] = await pool.query(
+        'SELECT id, email, tipo, activo FROM usuario ORDER BY id'
+      );
+      console.error('\n=== DIAGNOSTICO LOGIN FALLIDO ===');
+      console.error(`Intentando login con: ${email} / ${password}`);
+      console.error(`Status devuelto: ${res.status}`);
+      console.error(`Body: ${JSON.stringify(res.body)}`);
+      console.error(`Usuarios en BD (${usuarios.length}):`);
+      console.table(usuarios);
+      console.error('=================================\n');
+    } catch (e) {
+      console.error('No pude listar usuarios:', e.message);
+    }
     throw new Error(`Login fallo (${res.status}): ${JSON.stringify(res.body)}`);
   }
   return res.body.datos;
 }
-
 
 // -------------------------------------------------------------
 //   Loggear como admin (atajo)

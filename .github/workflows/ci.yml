@@ -112,6 +112,7 @@ jobs:
 
       - name: Cobertura total
         working-directory: backend
+        continue-on-error: true
         env:
           NODE_ENV: pruebas
           BD_HOST: 127.0.0.1

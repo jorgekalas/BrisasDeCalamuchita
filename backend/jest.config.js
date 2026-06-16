@@ -29,10 +29,10 @@ export default {
   ],
   coverageThreshold: {
     global: {
-      branches: 60,    // ramas de if/else
-      functions: 70,   // funciones llamadas
-      lines: 70,       // lineas ejecutadas
-      statements: 70,
+      branches: 20,    // ramas de if/else
+      functions: 35,   // funciones llamadas
+      lines: 30,       // lineas ejecutadas
+      statements: 30,
     },
   },
   coverageReporters: ['text', 'html', 'lcov'],

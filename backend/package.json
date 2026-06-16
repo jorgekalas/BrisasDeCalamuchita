@@ -12,10 +12,10 @@
     "semillas": "node scripts/runner-sql.cjs semillas",
     "resetear": "node scripts/runner-sql.cjs resetear",
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
-    "test:unit": "node --experimental-vm-modules node_modules/jest/bin/jest.js tests/unitarios",
+    "test:unit": "node --experimental-vm-modules node_modules/jest/bin/jest.js tests/unitarios --forceExit",
     "test:e2e": "node --experimental-vm-modules node_modules/jest/bin/jest.js tests/e2e --runInBand --forceExit",
     "test:watch": "node --experimental-vm-modules node_modules/jest/bin/jest.js --watch tests/unitarios",
-    "test:coverage": "node --experimental-vm-modules node_modules/jest/bin/jest.js --coverage --forceExit",
+    "test:coverage": "node --experimental-vm-modules node_modules/jest/bin/jest.js --runInBand --coverage --forceExit",
     "lint": "eslint src tests"
   },
   "keywords": [

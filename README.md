@@ -133,13 +133,13 @@ Detalles adicionales del entorno Docker en [docker/README.md](./docker/README.md
 
 ## Documentación
 
-- [Documento base del sistema](./docs/manuales/01-documento-base.md) — relevamiento, alcance, casos de uso, reglas de negocio
-- [Diccionario de datos](./docs/diagramas/diccionario-de-datos.md) — tablas, columnas, restricciones, índices
-- [Diagramas del sistema](./docs/diagramas/) — DER, clases, casos de uso, estados, secuencia
-- [Entorno Docker](./docker/README.md) — configuración del entorno de desarrollo local
-- Manual técnico
-- Manual de usuario
-- Documentación de la API (OpenAPI/Swagger)
+* [Documento base del sistema](https://github.com/jorgekalas/BrisasDeCalamuchita/blob/main/docs/manuales/01-documento-base.md) — relevamiento, alcance, casos de uso, reglas de negocio
+* [Diccionario de datos](https://github.com/jorgekalas/BrisasDeCalamuchita/blob/main/docs/diagramas/diccionario-de-datos.md) — tablas, columnas, restricciones, índices
+* [Diagramas del sistema](https://github.com/jorgekalas/BrisasDeCalamuchita/blob/main/docs/diagramas) — DER, clases, casos de uso, estados, secuencia
+* [Entorno Docker](https://github.com/jorgekalas/BrisasDeCalamuchita/blob/main/docker/README.md) — configuración del entorno de desarrollo local
+* [Informe Final (PDF)](https://github.com/jorgekalas/BrisasDeCalamuchita/blob/main/docs/manuales/Informe_Final_Brisas_de_Calamuchita.pdf) — documento completo de la Etapa 4 (68 páginas)
+  * Bloque D · Manual técnico — instalación local, despliegue productivo, componentes del backend y frontend
+  * Bloque D · Manual de usuario — flujos del visitante, cliente y administrador, mensajes y alertas frecuentes
 
 ## Licencia
 

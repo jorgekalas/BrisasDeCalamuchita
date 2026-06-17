@@ -10,10 +10,12 @@ import Reservar from './paginas/Reservar';
 import ReservaEnviada from './paginas/ReservaEnviada';
 import MisReservas from './paginas/MisReservas';
 import PanelAdmin from './paginas/PanelAdmin';
+import { ProveedorModal } from './contexto/ContextoModal';
 
 export default function App() {
   return (
     <ProveedorAuth>
+      <ProveedorModal>
       <BrowserRouter>
         <Routes>
           <Route element={<Layout />}>
@@ -41,6 +43,7 @@ export default function App() {
           </Route>
         </Routes>
       </BrowserRouter>
+      </ProveedorModal> 
     </ProveedorAuth>
   );
 }

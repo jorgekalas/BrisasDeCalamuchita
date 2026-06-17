@@ -4,6 +4,7 @@ import { useApi } from '../ganchos/useApi';
 import * as apiReservas from '../api/reservas';
 import { extraerError } from '../api/cliente';
 import { ESTADOS, ESTILOS_ESTADO } from '../datos/constantes';
+import { useModal } from '../contexto/ContextoModal';
 import { formatearFecha, formatearFechaConAnio, calcularNoches } from '../utilidades/formato';
 import { Calendar, Users, Car, Phone, X, AlertCircle, RefreshCw } from 'lucide-react';
 
@@ -23,11 +24,18 @@ export default function MisReservas() {
 
   const [cancelando, setCancelando] = useState(null);  // id de la reserva que se está cancelando
   const [errorCancelar, setErrorCancelar] = useState(null);
+  const modal = useModal();
 
   const reservas = respuesta?.reservas || [];
 
   const handleCancelar = async (reservaId) => {
-    if (!confirm('¿Estás seguro de cancelar esta reserva?')) return;
+    const ok = await modal.confirmar('Si la cancelás, las fechas quedarán liberadas para otros huéspedes.', {
+  titulo: '¿Cancelar reserva?',
+  textoConfirmar: 'Sí, cancelar',
+  textoCancelar: 'Volver',
+  variante: 'destructiva',
+});
+if (!ok) return;
 
     setCancelando(reservaId);
     setErrorCancelar(null);

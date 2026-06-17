@@ -16,6 +16,7 @@ import {
   Check, X, Calendar, Users, Car, Phone, Mail, LogIn, LogOut,
   AlertCircle, RefreshCw, ChevronLeft, ChevronRight,
 } from 'lucide-react';
+import { useModal } from '../contexto/ContextoModal';
 
 const FILTROS = ['Todas', 'Pendiente', 'Confirmada', 'En curso', 'Finalizada', 'Cancelada'];
 const RESERVAS_POR_PAGINA = 10;
@@ -38,6 +39,7 @@ export default function PanelAdmin() {
   const [pagina, setPagina] = useState(1);
   const [accionEnCurso, setAccionEnCurso] = useState(null);  // { reservaId, accion }
   const [errorAccion, setErrorAccion] = useState(null);
+  const modal = useModal();
 
   // --- Listado de reservas paginado del servidor ---
   // useApi se re-ejecuta cuando cambian filtro o pagina (deps)
@@ -97,7 +99,13 @@ export default function PanelAdmin() {
       checkIn: 'Marcar check-in (la huésped llegó)',
       checkOut: 'Marcar check-out (huésped se fue)',
     };
-    if (!confirm(`${labels[accion]}?`)) return;
+    const ok = await modal.confirmar(`Vas a ${labels[accion].toLowerCase()} la reserva. Esta acción quedará registrada.`, {
+  titulo: `${labels[accion]}`,
+  textoConfirmar: `Sí, ${labels[accion].toLowerCase()}`,
+  textoCancelar: 'Volver',
+  variante: accion === 'cancelar' ? 'destructiva' : 'primaria',
+});
+if (!ok) return;
 
     setAccionEnCurso({ reservaId, accion });
     setErrorAccion(null);

@@ -4,6 +4,7 @@ import { useApi } from '../ganchos/useApi';
 import * as apiPropiedad from '../api/propiedad';
 import { enriquecerPropiedad, propiedadDefault } from '../datos/propiedadConDefaults';
 import { ArrowRight, Users, Bed, BedDouble, Bath, Flame, Wifi, Car, PawPrint, ChefHat, Tv, MapPin, Star } from 'lucide-react';
+import GaleriaCasa from '../componentes/GaleriaCasa';
 
 const ICONOS = { Users, Bed, BedDouble, Bath, Flame, Wifi, Car, PawPrint, ChefHat, Tv };
 
@@ -156,27 +157,7 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* ===== FOTOS ===== */}
-      <section id="fotos" className="max-w-7xl mx-auto px-6 py-20">
-        <div className="mb-10">
-          <div className="text-xs uppercase tracking-widest text-terracota-600 mb-3">La casa</div>
-          <h2 className="font-display text-4xl md:text-5xl text-piedra-900 max-w-2xl">
-            Cada rincón, pensado para <span className="italic text-musgo-700">quedarse</span>
-          </h2>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="md:col-span-2 md:row-span-2 aspect-square md:aspect-auto rounded-organico overflow-hidden con-grano">
-            <img src={propiedad.fotos[1]} alt="Living" className="w-full h-full object-cover hover:scale-105 transition-transform duration-700" />
-          </div>
-          <div className="aspect-square rounded-organico overflow-hidden con-grano">
-            <img src={propiedad.fotos[2]} alt="Cocina" className="w-full h-full object-cover hover:scale-105 transition-transform duration-700" />
-          </div>
-          <div className="aspect-square rounded-organico overflow-hidden con-grano">
-            <img src={propiedad.fotos[3]} alt="Habitación" className="w-full h-full object-cover hover:scale-105 transition-transform duration-700" />
-          </div>
-        </div>
-      </section>
+      <GaleriaCasa />
 
       {/* ===== UBICACIÓN ===== */}
       <section className="max-w-7xl mx-auto px-6 py-20">

@@ -68,6 +68,9 @@ export default {
       animation: {
         'aparecer': 'aparecer 0.7s ease-out both',
         'flotar': 'flotar 6s ease-in-out infinite',
+        // Marquee horizontal para la galería de la casa.
+        // Duración larga (60s) → movimiento cinematográfico, no agresivo.
+        'marquee': 'marquee 60s linear infinite',
       },
       keyframes: {
         aparecer: {
@@ -77,6 +80,12 @@ export default {
         flotar: {
           '0%, 100%': { transform: 'translateY(0)' },
           '50%': { transform: 'translateY(-12px)' },
+        },
+        // Desplaza el contenido un 50% hacia la izquierda. Como el componente
+        // duplica la lista, al llegar al 50% se ve identico al inicio: loop perfecto.
+        marquee: {
+          '0%': { transform: 'translateX(0)' },
+          '100%': { transform: 'translateX(-50%)' },
         },
       },
     },

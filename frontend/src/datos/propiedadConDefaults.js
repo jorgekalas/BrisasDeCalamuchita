@@ -33,11 +33,14 @@ const DEFAULTS_VISUALES = {
     { icono: 'Wifi', texto: 'Wi-Fi en toda la casa' },
     { icono: 'Car', texto: 'Cochera para 1 vehículo' },
   ],
+  // Fotos reales de la casa. Viven en frontend/public/casa/ y se sirven
+  // como estáticos. hero.jpg es la foto principal del bloque superior;
+  // el resto se referencia desde el componente GaleriaCasa.
   fotos: [
-    'https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=1600&q=80',
-    'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=1200&q=80',
-    'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=1200&q=80',
-    'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1200&q=80',
+    '/casa/hero.jpg',  // [0] hero
+    '/casa/01.jpg',    // [1] preview en Reservar.jsx y compat con codigo viejo
+    '/casa/02.jpg',    // [2] compat
+    '/casa/03.jpg',    // [3] compat
   ],
 };
 

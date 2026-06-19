@@ -1,54 +1,36 @@
 // =============================================================
 //   SERVICIO — EMAIL
 // =============================================================
-//   Capa de envio real por SMTP. Soporta dos modos:
+//   Capa de envio real por HTTP API. Soporta dos modos:
 //
 //     - simulado (EMAIL_MODO=simulado): loggea a consola y
 //       NO envia nada. Perfecto para desarrollo y tests.
-//     - real (EMAIL_MODO=real): usa Nodemailer con Gmail SMTP.
-//       Necesita EMAIL_USUARIO, EMAIL_PASSWORD (app password)
-//       configurados.
+//     - real (EMAIL_MODO=real): usa Resend (resend.com).
+//       Necesita RESEND_API_KEY configurada.
 //
 //   El cron de notificaciones llama a `enviar()` sin saber
 //   en que modo esta. Asi podemos cambiar entre modos solo
 //   cambiando el .env, sin tocar codigo.
+//
+//   HISTORICO: hasta junio 2026 usaba Gmail SMTP via Nodemailer.
+//   Render free tier bloquea el puerto 587 saliente, asi que
+//   migramos a Resend que usa HTTPS estandar.
 // =============================================================
 
 import { env } from '../config/env.js';
 
 
 // -------------------------------------------------------------
-//   Transporter de Nodemailer (lazy, solo si modo real)
+//   Endpoint de la API de Resend
 // -------------------------------------------------------------
-//   Lo creamos la primera vez que se necesita, no al importar
-//   el modulo. Asi en modo simulado no requerimos nodemailer.
-// -------------------------------------------------------------
-let transporter = null;
-
-async function obtenerTransporter() {
-  if (transporter) return transporter;
-
-  const nodemailer = (await import('nodemailer')).default;
-
-  transporter = nodemailer.createTransport({
-    host: env.EMAIL_HOST || 'smtp.gmail.com',
-    port: env.EMAIL_PUERTO || 587,
-    secure: false,  // STARTTLS en 587
-    auth: {
-      user: env.EMAIL_USUARIO,
-      pass: env.EMAIL_PASSWORD,
-    },
-  });
-
-  return transporter;
-}
+const RESEND_API_URL = 'https://api.resend.com/emails';
 
 
 // -------------------------------------------------------------
 //   Enviar un email
 // -------------------------------------------------------------
 //   Recibe { destinatario, asunto, cuerpo } y devuelve un
-//   objeto { ok: boolean, error?: string }.
+//   objeto { ok: boolean, error?: string, messageId?: string }.
 //
 //   Nunca tira excepciones: convierte cualquier error en
 //   { ok: false, error: '...' } para que el cron pueda
@@ -68,28 +50,44 @@ export async function enviar({ destinatario, asunto, cuerpo }) {
     return { ok: true, simulado: true };
   }
 
-  // --- Modo real: SMTP con Nodemailer ---
+  // --- Modo real: Resend via HTTP API ---
+  if (!env.RESEND_API_KEY) {
+    return {
+      ok: false,
+      error: 'RESEND_API_KEY no configurada en variables de entorno',
+    };
+  }
+
+  const remitenteNombre = env.EMAIL_REMITENTE_NOMBRE || 'Brisas de Calamuchita';
+  // onboarding@resend.dev: remitente compartido que Resend ofrece sin verificar
+  // dominio. Cuando el proyecto tenga dominio propio, cambiar por
+  // notificaciones@<dominio-verificado>.
+  const remitenteEmail = env.EMAIL_REMITENTE_DIRECCION || 'onboarding@resend.dev';
+
   try {
-    const transport = await obtenerTransporter();
-
-    const remitenteNombre = env.EMAIL_REMITENTE_NOMBRE || 'Brisas de Calamuchita';
-    const remitenteEmail  = env.EMAIL_USUARIO;
-
-    const info = await transport.sendMail({
-      from: `"${remitenteNombre}" <${remitenteEmail}>`,
-      to: destinatario,
-      subject: asunto,
-      html: cuerpo,
-      // Forzar UTF-8: sin esto algunos clientes interpretan los bytes
-      // como Latin-1 y se ven "MarÃ­a" en vez de "María", "Cordoba"
-      // en vez de "Córdoba", etc.
-      textEncoding: 'base64',
+    const respuesta = await fetch(RESEND_API_URL, {
+      method: 'POST',
       headers: {
-        'Content-Type': 'text/html; charset=UTF-8',
+        'Authorization': `Bearer ${env.RESEND_API_KEY}`,
+        'Content-Type': 'application/json',
       },
+      body: JSON.stringify({
+        from: `${remitenteNombre} <${remitenteEmail}>`,
+        to: destinatario,
+        subject: asunto,
+        html: cuerpo,
+      }),
     });
 
-    return { ok: true, messageId: info.messageId };
+    const datos = await respuesta.json();
+
+    if (!respuesta.ok) {
+      // La API de Resend devuelve { name, message, statusCode } en errores
+      const motivo = datos?.message || datos?.error || `HTTP ${respuesta.status}`;
+      return { ok: false, error: motivo };
+    }
+
+    return { ok: true, messageId: datos.id };
   } catch (error) {
     return {
       ok: false,
@@ -100,20 +98,36 @@ export async function enviar({ destinatario, asunto, cuerpo }) {
 
 
 // -------------------------------------------------------------
-//   Verificar la conexion SMTP (para diagnostico)
+//   Verificar la conexion con Resend (para diagnostico)
 // -------------------------------------------------------------
-//   Se puede llamar al arrancar el servidor para validar que
-//   las credenciales estan bien antes de empezar a procesar.
+//   Hace un fetch al endpoint de API keys solo para confirmar
+//   que la key es valida. No envia ningun email.
 // -------------------------------------------------------------
 export async function verificarConexion() {
   if (env.EMAIL_MODO === 'simulado') {
     return { ok: true, modo: 'simulado' };
   }
 
+  if (!env.RESEND_API_KEY) {
+    return { ok: false, error: 'RESEND_API_KEY no configurada' };
+  }
+
   try {
-    const transport = await obtenerTransporter();
-    await transport.verify();
-    return { ok: true, modo: 'real' };
+    // GET /api-keys solo lista las keys (no las usa para enviar).
+    // Si la API key es valida, devuelve 200.
+    const respuesta = await fetch('https://api.resend.com/api-keys', {
+      headers: { 'Authorization': `Bearer ${env.RESEND_API_KEY}` },
+    });
+
+    if (!respuesta.ok) {
+      const datos = await respuesta.json().catch(() => ({}));
+      return {
+        ok: false,
+        error: `API key invalida o sin permisos (HTTP ${respuesta.status}): ${datos?.message || 'sin detalle'}`,
+      };
+    }
+
+    return { ok: true, modo: 'real', proveedor: 'resend' };
   } catch (error) {
     return { ok: false, error: error.message };
   }

@@ -56,13 +56,11 @@ const schemaEnv = z.object({
   JWT_SECRETO: z.string().min(32, 'JWT_SECRETO debe tener al menos 32 caracteres').optional(),
   JWT_EXPIRACION: z.string().default('24h'),
 
-  // --- Email (Bloque 8) ---
+// --- Email (Bloque 8) ---
   EMAIL_MODO: z.enum(['simulado', 'real']).default('simulado'),
-  EMAIL_HOST: z.string().optional(),
-  EMAIL_PUERTO: z.coerce.number().optional(),
-  EMAIL_USUARIO: z.string().email().optional(),
-  EMAIL_PASSWORD: z.string().optional(),
+  RESEND_API_KEY: z.string().optional(),
   EMAIL_REMITENTE_NOMBRE: z.string().default('Brisas de Calamuchita'),
+  EMAIL_REMITENTE_DIRECCION: z.string().email().default('onboarding@resend.dev'),
 });
 
 

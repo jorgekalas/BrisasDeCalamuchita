@@ -47,7 +47,7 @@ Etapa 4 (final) completada. Todas las funcionalidades planificadas están implem
 - CRUD completo sobre usuarios, reservas, vehículos, pagos y notificaciones.
 - Máquina de estados de reservas con seis estados (Pendiente, Confirmada, En curso, Finalizada, Cancelada, No Show).
 - Bloqueo temporal de fechas de 2 horas con liberación automática vía cron interno.
-- Notificaciones por email con patrón outbox (Nodemailer + Gmail SMTP real).
+- Notificaciones por email con patrón outbox (Resend HTTP API + dominio verificado).
 - Panel administrativo con KPIs, listado paginado y filtros, y calendario lateral sincronizado.
 - Frontend completamente integrado con la API REST.
 - 152 pruebas automatizadas (64 unitarias de backend, 40 E2E, 48 de frontend) ejecutadas en GitHub Actions en cada push.
@@ -62,7 +62,7 @@ Ver [CHANGELOG.md](./CHANGELOG.md) para el detalle de avances por bloque a lo la
 | Frontend | React 18 + Vite + React Router + Tailwind CSS + Axios |
 | Backend | Node.js 20 + Express + mysql2 + JWT + bcryptjs + Zod |
 | Base de datos | MySQL 8 |
-| Notificaciones | Nodemailer + Gmail SMTP |
+| Notificaciones | Resend HTTP API + dominio propio verificado |
 | Contenedores | Docker + Docker Compose |
 | CI/CD | GitHub Actions |
 | Despliegue | Vercel (frontend) + Render (backend) + TiDB Cloud (BD MySQL serverless) |
